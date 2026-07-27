@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Textination - Yazar Editörü & Polisiye Pano</title>
+  <meta name="description" content="Dijital Yazarlık ve Kitap Oluşturma Platformu, İnteraktif Polisiye Karakter Haritası ve Yazım Editörü">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- 1. STARTUP SCREEN -->
+    <div id="startup-screen" class="screen active">
+      <h1 class="brand-title-large">Textination</h1>
+      <p class="brand-subtitle">Dijital Yazarlık, Karakter İlişki Haritası ve Kitap Oluşturma Platformu</p>
+      <button class="btn-hero" onclick="app.showScreen('login-screen')">Başla ✨</button>
+    </div>
+
+    <!-- 2. LOGIN SCREEN -->
+    <div id="login-screen" class="screen">
+      <div class="login-card">
+        <h2 class="login-title">Giriş Yap</h2>
+        <button class="btn-google" onclick="app.handleGoogleLogin()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          Google ile Devam Et
+        </button>
+        <div class="divider"><span>veya</span></div>
+        <div class="form-group">
+          <input type="email" class="form-control" id="login-email" placeholder="E-posta adresi" value="yazar@textination.com">
+        </div>
+        <div class="form-group">
+          <input type="password" class="form-control" id="login-pass" placeholder="Şifre" value="••••••••">
+        </div>
+        <button class="btn-primary" onclick="app.showScreen('main-screen')">Giriş Yap</button>
+        <div class="login-footer">
+          Hesabın yok mu? <button class="link-btn" onclick="app.showScreen('main-screen')">Textination'a kaydol</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. MAIN APP WORKSPACE SCREEN -->
+    <div id="main-screen" class="screen">
+      <!-- Sidebar Nav -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="brand-logo">
+            <span class="brand-logo-text">Textination</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-segment="Kitaplarım" onclick="app.navigate('Kitaplarım')">
+            <span class="nav-icon">📚</span>
+            <span class="nav-text">Kitaplarım</span>
+          </button>
+          <button class="nav-item" data-segment="Profil" onclick="app.navigate('Profil')">
+            <span class="nav-icon">👤</span>
+            <span class="nav-text">Profil</span>
+          </button>
+          <button class="nav-item" data-segment="Karakter Dosyası" onclick="app.navigate('Karakter Dosyası')">
+            <span class="nav-icon">📑</span>
+            <span class="nav-text">Karakter Dosyası</span>
+          </button>
+          <button class="nav-item" data-segment="Yazma Egzersizi" onclick="app.navigate('Yazma Egzersizi')">
+            <span class="nav-icon">✍️</span>
+            <span class="nav-text">Yazma Egzersizi</span>
+          </button>
+          <button class="nav-item" data-segment="Mekan Fotoğrafları" onclick="app.navigate('Mekan Fotoğrafları')">
+            <span class="nav-icon">🖼️</span>
+            <span class="nav-text">Mekan Fotoğrafları</span>
+          </button>
+          <button class="nav-item" data-segment="Asistan Yazar" onclick="app.navigate('Asistan Yazar')">
+            <span class="nav-icon">🤖</span>
+            <span class="nav-text">Asistan Yazar</span>
+          </button>
+          <button class="nav-item" data-segment="İlham Alıntıları" onclick="app.navigate('İlham Alıntıları')">
+            <span class="nav-icon">💬</span>
+            <span class="nav-text">İlham Alıntıları</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button class="btn-theme-toggle" onclick="app.toggleTheme()">
+            <span id="theme-icon">🌙</span>
+            <span>Karanlık/Aydınlık Mod</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Workspace Area -->
+      <div class="workspace">
+        <!-- Top Navigation Bar -->
+        <header class="top-navbar">
+          <div class="left-nav">
+            <button class="btn-icon" onclick="app.toggleSidebar()" title="Menüyü Daralt/Genişlet">☰</button>
+            <h2 class="page-title" id="current-page-title">Kitaplarım</h2>
+          </div>
+          <div class="right-nav">
+            <div class="user-badge" onclick="app.navigate('Profil')" style="cursor: pointer;">
+              <div class="user-avatar-tiny" id="header-user-initial">A</div>
+              <span id="header-user-name">Antigravity Yazar</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Dynamic Content Pages Area -->
+        <main class="content-area" id="content-area">
+          
+          <!-- View: Kitaplarım Grid -->
+          <div id="view-books" class="view-page active">
+            <div class="books-grid" id="books-grid-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- View: Single Book Workspace (Rich Text + Detective Board + Book Settings) -->
+          <div id="view-book-workspace" class="view-page" style="display: none; height: 100%;">
+            <div class="book-workspace">
+              <div class="book-workspace-nav">
+                <button class="book-tab-btn active" onclick="app.switchBookTab('editor')">📝 Yazım Editörü</button>
+                <button class="book-tab-btn" onclick="app.switchBookTab('corkboard')">📌 Polisiye Pano (İlişki Haritası)</button>
+                <button class="book-tab-btn" onclick="app.switchBookTab('settings')">⚙️ Kitap Detayları</button>
+                <div style="margin-left: auto;">
+                  <button class="tool-btn" onclick="app.closeBookWorkspace()">← Kitaplarıma Dön</button>
+                </div>
+              </div>
+
+              <div class="book-tab-content">
+                <!-- Sub-Tab 1: Rich Text Writing Editor -->
+                <div id="subtab-editor" class="tab-pane active" style="height: 100%;">
+                  <div class="editor-container" id="editor-container">
+                    <div class="editor-toolbar">
+                      <button class="tool-btn" onclick="app.formatText('bold')" title="Kalın"><b>B</b></button>
+                      <button class="tool-btn" onclick="app.formatText('italic')" title="İtalik"><i>I</i></button>
+                      <button class="tool-btn" onclick="app.formatText('underline')" title="Altı Çizili"><u>U</u></button>
+                      <span style="color: var(--border-color)">|</span>
+                      <button class="tool-btn" onclick="app.formatText('justifyLeft')" title="Sola Hizala">⬅</button>
+                      <button class="tool-btn" onclick="app.formatText('justifyCenter')" title="Ortala">↔</button>
+                      <button class="tool-btn" onclick="app.formatText('justifyRight')" title="Sağa Hizala">➡</button>
+                      <span style="color: var(--border-color)">|</span>
+                      <button class="tool-btn" onclick="app.formatText('insertUnorderedList')">• Liste</button>
+                      <button class="tool-btn" onclick="app.toggleFocusMode()">👁 Focus Mode</button>
+                      <button class="tool-btn" onclick="app.exportCurrentBookText()">📥 İndir (.txt)</button>
+                      <span style="margin-left: auto; color: var(--accent-success); font-weight: 500; font-size: 0.85rem;" id="editor-autosave-status">✓ Otomatik Kaydedildi</span>
+                    </div>
+
+                    <div class="editor-body-wrapper">
+                      <div class="rich-editor-paper" id="rich-editor-content" contenteditable="true" oninput="app.onEditorInput()">
+                        Gecenin karanlığı şehri kapladığında...
+                      </div>
+                    </div>
+
+                    <div class="editor-statusbar">
+                      <span>Kelime Sayısı: <strong id="stat-word-count">0</strong></span>
+                      <span>Karakter Sayısı: <strong id="stat-char-count">0</strong></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sub-Tab 2: Polisiye Pano (Detective Corkboard & Interactive SVG Map) -->
+                <div id="subtab-corkboard" class="tab-pane" style="display: none; height: 100%;">
+                  <div class="corkboard-container" id="corkboard-container">
+                    <div class="corkboard-toolbar">
+                      <span style="font-weight: 700; font-family: var(--font-heading);">📌 Polisiye Şematik Pano:</span>
+                      <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem;" onclick="app.openCreatePersonModal()">+ Kişi Ekle</button>
+                      <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; background: var(--accent-secondary);" onclick="app.openCreateRelationModal()">🔗 İlişki Bağla</button>
+                      <span style="border-right: 1px solid rgba(255,255,255,0.2); height: 20px;"></span>
+                      <span>Filtre:</span>
+                      <span class="filter-badge active" data-rel="Aile" onclick="app.toggleRelationFilter('Aile', this)">Aile</span>
+                      <span class="filter-badge active" data-rel="Arkadaşlık" onclick="app.toggleRelationFilter('Arkadaşlık', this)">Arkadaşlık</span>
+                      <span class="filter-badge active" data-rel="Aşk" onclick="app.toggleRelationFilter('Aşk', this)">Aşk</span>
+                      <span class="filter-badge active" data-rel="Düşmanlık" onclick="app.toggleRelationFilter('Düşmanlık', this)">Düşmanlık</span>
+                    </div>
+
+                    <!-- SVG Overlay for relationship connecting lines -->
+                    <svg id="corkboard-svg"></svg>
+
+                    <!-- Draggable Person Nodes Layer -->
+                    <div id="corkboard-nodes-layer"></div>
+                  </div>
+                </div>
+
+                <!-- Sub-Tab 3: Book Details & Settings -->
+                <div id="subtab-settings" class="tab-pane" style="display: none; padding: 2rem;">
+                  <div class="profile-card" style="max-width: 600px;">
+                    <h3 style="margin-bottom: 1.5rem; font-family: var(--font-heading);">Kitap Ayarları & Bilgileri</h3>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                      <label style="font-weight: 600;">Kitap Başlığı</label>
+                      <input type="text" id="setting-book-title" class="form-control">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                      <label style="font-weight: 600;">Konusu / Özet</label>
+                      <textarea id="setting-book-subject" class="form-control" rows="4"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                      <label style="font-weight: 600;">Kapak Görseli URL veya Yolu</label>
+                      <input type="text" id="setting-book-cover" class="form-control" placeholder="https://example.com/cover.jpg">
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                      <button class="btn-primary" style="background: var(--accent-danger);" onclick="app.deleteCurrentBook()">Kitabı Sil</button>
+                      <button class="btn-primary" onclick="app.saveBookSettings()">Değişiklikleri Kaydet</button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- View: Profil -->
+          <div id="view-profile" class="view-page" style="display: none;">
+            <div class="profile-card">
+              <div class="profile-header">
+                <div class="profile-avatar-large" id="profile-avatar-display">A</div>
+                <div>
+                  <h2 style="font-family: var(--font-heading);" id="profile-display-name">Antigravity Yazar</h2>
+                  <p style="color: var(--text-secondary);" id="profile-display-email">yazar@textination.com</p>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: 600;">Ad Soyad / Yazar Adı</label>
+                <input type="text" id="profile-input-name" class="form-control" value="Antigravity Yazar">
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: 600;">E-posta</label>
+                <input type="email" id="profile-input-email" class="form-control" value="yazar@textination.com">
+              </div>
+              <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="font-weight: 600;">Biyografi / Hakkımda</label>
+                <textarea id="profile-input-bio" class="form-control" rows="4">Textination üzerinde hikayeler kaleme alan tutkulu bir yazar.</textarea>
+              </div>
+              <button class="btn-primary" onclick="app.saveProfile()">Profili Güncelle</button>
+            </div>
+          </div>
+
+          <!-- View: Karakter Dosyası (Character Templates & Bank) -->
+          <div id="view-templates" class="view-page" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+              <p style="color: var(--text-secondary);">Karakter taslakları bankası ve hazır yazar şablonları</p>
+              <button class="btn-primary" onclick="app.openCreateTemplateModal()">+ Yeni Şablon Oluştur</button>
+            </div>
+            <div class="templates-grid" id="templates-grid-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- View: Yazma Egzersizi -->
+          <div id="view-exercise" class="view-page" style="display: none;">
+            <div class="exercise-wrapper">
+              <div class="prompt-box">
+                <span>🎲 Günün Yazma Sorusu & İlhamı:</span>
+                <p class="prompt-text" id="exercise-prompt-text">"Eski bir kütüphanede bulduğun haritanın üzerinde adın yazıyordu. Olaylar nasıl gelişir?"</p>
+                <button class="tool-btn" style="margin-top: 1rem;" onclick="app.generateRandomPrompt()">🔄 Yeni İlham Getir</button>
+              </div>
+              <textarea class="exercise-textarea" placeholder="Egzersiz metninizi buraya yazmaya başlayın..." id="exercise-text-area" oninput="app.updateExerciseStats()"></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Yazılan Kelime: <strong id="exercise-word-count">0</strong></span>
+                <button class="btn-primary" onclick="app.saveExerciseDraft()">Egzersizi Kaydet</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- View: Mekan Fotoğrafları (Location Moodboard) -->
+          <div id="view-locations" class="view-page" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+              <p style="color: var(--text-secondary);">Hikayelerinizdeki mekanlar için atmosfer ve ilham galerisi</p>
+              <button class="btn-primary" onclick="app.openAddLocationModal()">+ Yeni Mekan Ekle</button>
+            </div>
+            <div class="locations-grid" id="locations-grid-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- View: Asistan Yazar (AI Co-pilot) -->
+          <div id="view-assistant" class="view-page" style="display: none;">
+            <div class="assistant-chat-container">
+              <div class="ai-message">
+                <div class="ai-avatar">🤖</div>
+                <div>
+                  <h4 style="font-family: var(--font-heading); color: var(--accent-primary);">Textination Yapay Zeka Asistanı</h4>
+                  <p style="margin-top: 0.5rem;">Merhaba! Hikayenizde tıkandığınız noktalarda karakter fikirleri, olay örgüsü kırılmaları, mekan betimlemeleri veya diyalog tavsiyeleri üretebilirim.</p>
+                </div>
+              </div>
+              <div class="prompt-suggestions">
+                <span class="suggestion-chip" onclick="app.askAssistant('Gothic bir kasaba için 3 gizemli karakter ismi ve özelliği öner.')">💡 Gizemli Karakter Fikirleri</span>
+                <span class="suggestion-chip" onclick="app.askAssistant('Polisiye hikayede beklenmedik bir ters köşe (plot twist) senaryosu yaz.')">⚡ Olay Örgüsü Ters Köşe</span>
+                <span class="suggestion-chip" onclick="app.askAssistant('Sisli bir gecede liman kasabası betimlemesi yaz.')">🌉 Mekan Betimlemesi</span>
+              </div>
+              <div class="form-group" style="margin-top: 1rem;">
+                <textarea id="ai-user-prompt" class="form-control" rows="3" placeholder="Asistan Yazara bir soru veya istek yazın..."></textarea>
+              </div>
+              <button class="btn-primary" onclick="app.runAssistantQuery()">Asistana Sor ✨</button>
+              <div id="ai-response-box" style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); font-family: var(--font-editor); line-height: 1.8;"></div>
+            </div>
+          </div>
+
+          <!-- View: İlham Alıntıları -->
+          <div id="view-quotes" class="view-page" style="display: none;">
+            <div class="quotes-grid" id="quotes-grid-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </main>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: Yeni Kitap Oluştur -->
+  <div class="modal-overlay" id="modal-new-book">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Yeni Kitap Oluştur</h3>
+        <button class="btn-icon" onclick="app.closeModal('modal-new-book')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label style="font-weight: 600;">Kitap Adı</label>
+          <input type="text" id="new-book-title" class="form-control" placeholder="Örn: Sisli Gece">
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Konu / Özet</label>
+          <textarea id="new-book-subject" class="form-control" rows="3" placeholder="Kitabın kısa konusu..."></textarea>
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Kapak Görseli (İsteğe Bağlı URL)</label>
+          <input type="text" id="new-book-cover" class="form-control" placeholder="https://images.unsplash.com/...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tool-btn" onclick="app.closeModal('modal-new-book')">İptal</button>
+        <button class="btn-primary" onclick="app.createBook()">Oluştur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Polisiye Pano Kişi Ekle / Düzenle -->
+  <div class="modal-overlay" id="modal-person">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-person-title">Polisiye Panosuna Kişi Ekle</h3>
+        <button class="btn-icon" onclick="app.closeModal('modal-person')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="person-id">
+        <div class="form-group">
+          <label style="font-weight: 600;">Ad Soyad</label>
+          <input type="text" id="person-name" class="form-control" placeholder="Ahmet Yılmaz">
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Kişilik / Baskın Özellik</label>
+          <input type="text" id="person-trait" class="form-control" placeholder="İçine kapanık dedektif">
+        </div>
+        <div style="display: flex; gap: 1rem;">
+          <div class="form-group" style="flex: 1;">
+            <label style="font-weight: 600;">Yaş</label>
+            <input type="text" id="person-age" class="form-control" placeholder="32">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label style="font-weight: 600;">Cinsiyet</label>
+            <input type="text" id="person-gender" class="form-control" placeholder="Erkek / Kadın">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Meslek / Rol</label>
+          <input type="text" id="person-job" class="form-control" placeholder="Araştırmacı Gazeteci">
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Renk Etiketi</label>
+          <input type="color" id="person-color" class="form-control" value="#3498db" style="height: 40px; padding: 2px;">
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Karakter Biyografisi / Notlar</label>
+          <textarea id="person-bio" class="form-control" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tool-btn" onclick="app.closeModal('modal-person')">İptal</button>
+        <button class="btn-primary" onclick="app.savePerson()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: İki Kişi Arasında İlişki Bağla -->
+  <div class="modal-overlay" id="modal-relation">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Karakterler Arasında İlişki Bağla</h3>
+        <button class="btn-icon" onclick="app.closeModal('modal-relation')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label style="font-weight: 600;">1. Karakter</label>
+          <select id="relation-from" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">2. Karakter</label>
+          <select id="relation-to" class="form-control"></select>
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">İlişki Türü</label>
+          <select id="relation-type" class="form-control">
+            <option value="Aile">Aile</option>
+            <option value="Arkadaşlık">Arkadaşlık</option>
+            <option value="Aşk">Aşk</option>
+            <option value="Düşmanlık">Düşmanlık</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tool-btn" onclick="app.closeModal('modal-relation')">İptal</button>
+        <button class="btn-primary" onclick="app.saveRelation()">İlişkiyi Bağla 🔗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Mekan Fotoğrafı Ekle -->
+  <div class="modal-overlay" id="modal-location">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Mekan İlhamı Ekle</h3>
+        <button class="btn-icon" onclick="app.closeModal('modal-location')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label style="font-weight: 600;">Mekan Adı</label>
+          <input type="text" id="loc-title" class="form-control" placeholder="Örn: Eski Saat Kulesi">
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Açıklama / Atmosfer</label>
+          <textarea id="loc-desc" class="form-control" rows="3" placeholder="Sarmal merdivenli, sisli ve nemli hava..."></textarea>
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600;">Görsel URL</label>
+          <input type="text" id="loc-img" class="form-control" placeholder="https://images.unsplash.com/...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="tool-btn" onclick="app.closeModal('modal-location')">İptal</button>
+        <button class="btn-primary" onclick="app.saveLocation()">Ekle 🖼️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Area -->
+  <div id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

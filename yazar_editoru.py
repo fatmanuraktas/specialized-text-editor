@@ -1263,7 +1263,6 @@ class TextinationApp(QMainWindow):
         view = DetectiveBoardGraphicsView(scene, self, book_title)
         view.setObjectName("canvas_view")
         view.setStyleSheet("QGraphicsView { border: 6px solid #4E342E; border-radius: 12px; }")
-        view.setRenderHint(QGraphicsView.RenderHint.Antialiasing)
 
         # Attach scene update reference
         scene.update_connecting_lines = lambda: self.render_book_schematic_scene(scene, book_title)
