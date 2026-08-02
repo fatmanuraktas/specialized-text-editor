@@ -3,19 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Textination - Yazar Editörü & Polisiye Pano</title>
-  <meta name="description" content="Dijital Yazarlık ve Kitap Oluşturma Platformu, İnteraktif Polisiye Karakter Haritası ve Yazım Editörü">
+  <title>Imagefiction - Polisiye Pano, Yazma & İlişki Haritası</title>
+  <meta name="description" content="Minimalist Dijital Yazarlık, Polisiye Pano ve İlişki Haritası Platformu">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
   <div id="app">
 
-    <!-- 1. STARTUP SCREEN -->
+    <!-- 1. STARTUP SCREEN (Animated Pen Logo + Tagline) -->
     <div id="startup-screen" class="screen active">
-      <h1 class="brand-title-large">Textination</h1>
-      <p class="brand-subtitle">Dijital Yazarlık, Karakter İlişki Haritası ve Kitap Oluşturma Platformu</p>
-      <button class="btn-hero" onclick="app.showScreen('login-screen')">Başla ✨</button>
+      <div class="startup-decor"></div>
+      
+      <div class="pen-logo-container">
+        <!-- Animated Pen / Quill SVG -->
+        <svg class="pen-animated-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="pen-nib-path" d="M12 52L22 42L48 16C50.2 13.8 50.2 10.2 48 8C45.8 5.8 42.2 5.8 40 8L14 34L4 44L12 52Z" stroke="#74c69d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M36 12L44 20" stroke="#d8f3dc" stroke-width="2" stroke-linecap="round"/>
+          <path d="M8 56C16 52 24 54 32 50" stroke="#40916c" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 4"/>
+        </svg>
+
+        <h1 class="brand-title-large">Imagefiction</h1>
+        <p class="brand-tagline">"novel it and give it to the next person"</p>
+      </div>
+
+      <button class="btn-hero" onclick="app.showScreen('login-screen')">
+        <span>Başlat</span>
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
 
     <!-- 2. LOGIN SCREEN -->
@@ -28,63 +43,67 @@
         </button>
         <div class="divider"><span>veya</span></div>
         <div class="form-group">
-          <input type="email" class="form-control" id="login-email" placeholder="E-posta adresi" value="yazar@textination.com">
+          <input type="email" class="form-control" id="login-email" placeholder="E-posta adresi" value="yazar@imagefiction.com">
         </div>
         <div class="form-group">
           <input type="password" class="form-control" id="login-pass" placeholder="Şifre" value="••••••••">
         </div>
         <button class="btn-primary" onclick="app.showScreen('main-screen')">Giriş Yap</button>
         <div class="login-footer">
-          Hesabın yok mu? <button class="link-btn" onclick="app.showScreen('main-screen')">Textination'a kaydol</button>
+          Hesabın yok mu? <button class="link-btn" onclick="app.showScreen('main-screen')">Imagefiction'a kaydol</button>
         </div>
       </div>
     </div>
 
-    <!-- 3. MAIN APP WORKSPACE SCREEN -->
+    <!-- 3. MAIN WORKSPACE SCREEN -->
     <div id="main-screen" class="screen">
       <!-- Sidebar Nav -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <div class="brand-logo">
-            <span class="brand-logo-text">Textination</span>
+            <svg class="svg-icon" style="color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.5 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            <span class="brand-logo-text">Imagefiction</span>
           </div>
         </div>
 
         <nav class="sidebar-nav">
           <button class="nav-item active" data-segment="Kitaplarım" onclick="app.navigate('Kitaplarım')">
-            <span class="nav-icon">📚</span>
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             <span class="nav-text">Kitaplarım</span>
           </button>
+
+          <button class="nav-item" data-segment="Polisiye Pano" onclick="app.navigate('Polisiye Pano')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9 9h6M9 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span class="nav-text">Polisiye Pano</span>
+          </button>
+
+          <button class="nav-item" data-segment="Yazma" onclick="app.navigate('Yazma')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span class="nav-text">Yazma</span>
+          </button>
+
+          <button class="nav-item" data-segment="İlişki Haritası" onclick="app.navigate('İlişki Haritası')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/></svg>
+            <span class="nav-text">İlişki Haritası</span>
+          </button>
+
+          <button class="nav-item" data-segment="Karakterler" onclick="app.navigate('Karakterler')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" fill="none"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="14" r="2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span class="nav-text">Karakterler</span>
+          </button>
+
           <button class="nav-item" data-segment="Profil" onclick="app.navigate('Profil')">
-            <span class="nav-icon">👤</span>
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             <span class="nav-text">Profil</span>
-          </button>
-          <button class="nav-item" data-segment="Karakter Dosyası" onclick="app.navigate('Karakter Dosyası')">
-            <span class="nav-icon">📑</span>
-            <span class="nav-text">Karakter Dosyası</span>
-          </button>
-          <button class="nav-item" data-segment="Yazma Egzersizi" onclick="app.navigate('Yazma Egzersizi')">
-            <span class="nav-icon">✍️</span>
-            <span class="nav-text">Yazma Egzersizi</span>
-          </button>
-          <button class="nav-item" data-segment="Mekan Fotoğrafları" onclick="app.navigate('Mekan Fotoğrafları')">
-            <span class="nav-icon">🖼️</span>
-            <span class="nav-text">Mekan Fotoğrafları</span>
-          </button>
-          <button class="nav-item" data-segment="Asistan Yazar" onclick="app.navigate('Asistan Yazar')">
-            <span class="nav-icon">🤖</span>
-            <span class="nav-text">Asistan Yazar</span>
-          </button>
-          <button class="nav-item" data-segment="İlham Alıntıları" onclick="app.navigate('İlham Alıntıları')">
-            <span class="nav-icon">💬</span>
-            <span class="nav-text">İlham Alıntıları</span>
           </button>
         </nav>
 
         <div class="sidebar-footer">
           <button class="btn-theme-toggle" onclick="app.toggleTheme()">
-            <span id="theme-icon">🌙</span>
-            <span>Karanlık/Aydınlık Mod</span>
+            <span class="theme-icon-holder" id="theme-icon-svg">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            </span>
+            <span>Karanlık / Aydınlık Mod</span>
           </button>
         </div>
       </aside>
@@ -94,7 +113,9 @@
         <!-- Top Navigation Bar -->
         <header class="top-navbar">
           <div class="left-nav">
-            <button class="btn-icon" onclick="app.toggleSidebar()" title="Menüyü Daralt/Genişlet">☰</button>
+            <button class="btn-icon" onclick="app.toggleSidebar()" title="Menüyü Genişlet/Daralt">
+              <svg class="svg-icon" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2"/><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2"/></svg>
+            </button>
             <h2 class="page-title" id="current-page-title">Kitaplarım</h2>
           </div>
           <div class="right-nav">
@@ -115,20 +136,36 @@
             </div>
           </div>
 
-          <!-- View: Single Book Workspace (Rich Text + Detective Board + Book Settings) -->
+          <!-- View: Single Book Workspace -->
           <div id="view-book-workspace" class="view-page" style="display: none; height: 100%;">
             <div class="book-workspace">
               <div class="book-workspace-nav">
-                <button class="book-tab-btn active" onclick="app.switchBookTab('editor')">📝 Yazım Editörü</button>
-                <button class="book-tab-btn" onclick="app.switchBookTab('corkboard')">📌 Polisiye Pano (İlişki Haritası)</button>
-                <button class="book-tab-btn" onclick="app.switchBookTab('settings')">⚙️ Kitap Detayları</button>
+                <button class="book-tab-btn active" onclick="app.switchBookTab('editor')">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                  <span>Yazma</span>
+                </button>
+                <button class="book-tab-btn" onclick="app.switchBookTab('corkboard')">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9 9h6M9 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <span>İlişki Panosu</span>
+                </button>
+                <button class="book-tab-btn" onclick="app.switchBookTab('relations')">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/></svg>
+                  <span>İlişki Haritası</span>
+                </button>
+                <button class="book-tab-btn" onclick="app.switchBookTab('settings')">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                  <span>Ayarlar</span>
+                </button>
                 <div style="margin-left: auto;">
-                  <button class="tool-btn" onclick="app.closeBookWorkspace()">← Kitaplarıma Dön</button>
+                  <button class="tool-btn" onclick="app.closeBookWorkspace()">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2"/><polyline points="12 19 5 12 12 5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                    <span>Kitaplarıma Dön</span>
+                  </button>
                 </div>
               </div>
 
               <div class="book-tab-content">
-                <!-- Sub-Tab 1: Rich Text Writing Editor -->
+                <!-- Sub-Tab 1: Yazma (Papyrus Rich Text Editor) -->
                 <div id="subtab-editor" class="tab-pane active" style="height: 100%;">
                   <div class="editor-container" id="editor-container">
                     <div class="editor-toolbar">
@@ -136,14 +173,13 @@
                       <button class="tool-btn" onclick="app.formatText('italic')" title="İtalik"><i>I</i></button>
                       <button class="tool-btn" onclick="app.formatText('underline')" title="Altı Çizili"><u>U</u></button>
                       <span style="color: var(--border-color)">|</span>
-                      <button class="tool-btn" onclick="app.formatText('justifyLeft')" title="Sola Hizala">⬅</button>
-                      <button class="tool-btn" onclick="app.formatText('justifyCenter')" title="Ortala">↔</button>
-                      <button class="tool-btn" onclick="app.formatText('justifyRight')" title="Sağa Hizala">➡</button>
+                      <button class="tool-btn" onclick="app.formatText('justifyLeft')" title="Sola Hizala">Sola</button>
+                      <button class="tool-btn" onclick="app.formatText('justifyCenter')" title="Ortala">Ortala</button>
+                      <button class="tool-btn" onclick="app.formatText('justifyRight')" title="Sağa Hizala">Sağa</button>
                       <span style="color: var(--border-color)">|</span>
-                      <button class="tool-btn" onclick="app.formatText('insertUnorderedList')">• Liste</button>
-                      <button class="tool-btn" onclick="app.toggleFocusMode()">👁 Focus Mode</button>
-                      <button class="tool-btn" onclick="app.exportCurrentBookText()">📥 İndir (.txt)</button>
-                      <span style="margin-left: auto; color: var(--accent-success); font-weight: 500; font-size: 0.85rem;" id="editor-autosave-status">✓ Otomatik Kaydedildi</span>
+                      <button class="tool-btn" onclick="app.toggleFocusMode()">Odak Modu</button>
+                      <button class="tool-btn" onclick="app.exportCurrentBookText()">İndir (.txt)</button>
+                      <span style="margin-left: auto; color: var(--accent-secondary); font-weight: 600; font-size: 0.85rem;" id="editor-autosave-status">Otomatik Kaydedildi</span>
                     </div>
 
                     <div class="editor-body-wrapper">
@@ -159,14 +195,16 @@
                   </div>
                 </div>
 
-                <!-- Sub-Tab 2: Polisiye Pano (Detective Corkboard & Interactive SVG Map) -->
+                <!-- Sub-Tab 2: Polisiye Pano & İlişki Haritası (Large Panning Canvas & Zoom) -->
                 <div id="subtab-corkboard" class="tab-pane" style="display: none; height: 100%;">
                   <div class="corkboard-container" id="corkboard-container">
+                    
+                    <!-- Glassmorphic Top Toolbar -->
                     <div class="corkboard-toolbar">
-                      <span style="font-weight: 700; font-family: var(--font-heading);">📌 Polisiye Şematik Pano:</span>
+                      <span style="font-weight: 700; font-family: var(--font-heading);">İlişki Panosu:</span>
                       <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem;" onclick="app.openCreatePersonModal()">+ Kişi Ekle</button>
-                      <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; background: var(--accent-secondary);" onclick="app.openCreateRelationModal()">🔗 İlişki Bağla</button>
-                      <span style="border-right: 1px solid rgba(255,255,255,0.2); height: 20px;"></span>
+                      <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; background: var(--accent-secondary);" onclick="app.openCreateRelationModal()">İlişki Bağla</button>
+                      <span style="border-right: 1px solid rgba(255,255,255,0.2); height: 18px;"></span>
                       <span>Filtre:</span>
                       <span class="filter-badge active" data-rel="Aile" onclick="app.toggleRelationFilter('Aile', this)">Aile</span>
                       <span class="filter-badge active" data-rel="Arkadaşlık" onclick="app.toggleRelationFilter('Arkadaşlık', this)">Arkadaşlık</span>
@@ -174,11 +212,20 @@
                       <span class="filter-badge active" data-rel="Düşmanlık" onclick="app.toggleRelationFilter('Düşmanlık', this)">Düşmanlık</span>
                     </div>
 
-                    <!-- SVG Overlay for relationship connecting lines -->
-                    <svg id="corkboard-svg"></svg>
+                    <!-- Large Panning Canvas Viewport -->
+                    <div class="corkboard-viewport" id="corkboard-viewport">
+                      <svg id="corkboard-svg" width="3000" height="2400"></svg>
+                      <div id="corkboard-nodes-layer" style="width: 3000px; height: 2400px;"></div>
+                    </div>
 
-                    <!-- Draggable Person Nodes Layer -->
-                    <div id="corkboard-nodes-layer"></div>
+                    <!-- Bottom Scale & Zoom Controls -->
+                    <div class="corkboard-zoom-bar">
+                      <button class="zoom-btn" onclick="app.adjustZoom(-0.1)" title="Uzaklaştır">-</button>
+                      <span id="zoom-value-display" class="zoom-display">100%</span>
+                      <button class="zoom-btn" onclick="app.adjustZoom(0.1)" title="Yakınlaştır">+</button>
+                      <button class="zoom-btn reset-btn" onclick="app.resetZoomAndPan()" title="Sıfırla">Sıfırla</button>
+                    </div>
+
                   </div>
                 </div>
 
@@ -195,8 +242,14 @@
                       <textarea id="setting-book-subject" class="form-control" rows="4"></textarea>
                     </div>
                     <div class="form-group" style="margin-bottom: 1.5rem;">
-                      <label style="font-weight: 600;">Kapak Görseli URL veya Yolu</label>
-                      <input type="text" id="setting-book-cover" class="form-control" placeholder="https://example.com/cover.jpg">
+                      <label style="font-weight: 600;">Kapak Görseli Değiştir (Resim Dosyası Yükle)</label>
+                      <div class="file-drop-zone" onclick="document.getElementById('setting-book-cover-file').click()">
+                        <svg class="svg-icon" style="width: 2rem; height: 2rem; color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                        <span>Kapağı Güncellemek İçin Bir Resim Seçin</span>
+                        <input type="file" id="setting-book-cover-file" accept="image/*" style="display: none;" onchange="app.handleCoverFileSelect(event, 'setting-cover-preview', 'setting-cover-data')">
+                        <img id="setting-cover-preview" class="file-drop-preview" alt="Kapak Önizleme">
+                        <input type="hidden" id="setting-cover-data">
+                      </div>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                       <button class="btn-primary" style="background: var(--accent-danger);" onclick="app.deleteCurrentBook()">Kitabı Sil</button>
@@ -209,6 +262,17 @@
             </div>
           </div>
 
+          <!-- View: Karakterler Klasörü -->
+          <div id="view-templates" class="view-page" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+              <p style="color: var(--text-secondary);">Karakter dosyaları bankası. İncelemek için karakter kartının üstüne tıklayın.</p>
+              <button class="btn-primary" onclick="app.openCreatePersonModal()">+ Yeni Karakter Oluştur</button>
+            </div>
+            <div class="templates-grid" id="templates-grid-container">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
           <!-- View: Profil -->
           <div id="view-profile" class="view-page" style="display: none;">
             <div class="profile-card">
@@ -216,7 +280,7 @@
                 <div class="profile-avatar-large" id="profile-avatar-display">A</div>
                 <div>
                   <h2 style="font-family: var(--font-heading);" id="profile-display-name">Antigravity Yazar</h2>
-                  <p style="color: var(--text-secondary);" id="profile-display-email">yazar@textination.com</p>
+                  <p style="color: var(--text-secondary);" id="profile-display-email">yazar@imagefiction.com</p>
                 </div>
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
@@ -225,81 +289,13 @@
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label style="font-weight: 600;">E-posta</label>
-                <input type="email" id="profile-input-email" class="form-control" value="yazar@textination.com">
+                <input type="email" id="profile-input-email" class="form-control" value="yazar@imagefiction.com">
               </div>
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="font-weight: 600;">Biyografi / Hakkımda</label>
-                <textarea id="profile-input-bio" class="form-control" rows="4">Textination üzerinde hikayeler kaleme alan tutkulu bir yazar.</textarea>
+                <textarea id="profile-input-bio" class="form-control" rows="4">Imagefiction platformunda hikayeler kaleme alan tutkulu yazar.</textarea>
               </div>
               <button class="btn-primary" onclick="app.saveProfile()">Profili Güncelle</button>
-            </div>
-          </div>
-
-          <!-- View: Karakter Dosyası (Character Templates & Bank) -->
-          <div id="view-templates" class="view-page" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-              <p style="color: var(--text-secondary);">Karakter taslakları bankası ve hazır yazar şablonları</p>
-              <button class="btn-primary" onclick="app.openCreateTemplateModal()">+ Yeni Şablon Oluştur</button>
-            </div>
-            <div class="templates-grid" id="templates-grid-container">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
-
-          <!-- View: Yazma Egzersizi -->
-          <div id="view-exercise" class="view-page" style="display: none;">
-            <div class="exercise-wrapper">
-              <div class="prompt-box">
-                <span>🎲 Günün Yazma Sorusu & İlhamı:</span>
-                <p class="prompt-text" id="exercise-prompt-text">"Eski bir kütüphanede bulduğun haritanın üzerinde adın yazıyordu. Olaylar nasıl gelişir?"</p>
-                <button class="tool-btn" style="margin-top: 1rem;" onclick="app.generateRandomPrompt()">🔄 Yeni İlham Getir</button>
-              </div>
-              <textarea class="exercise-textarea" placeholder="Egzersiz metninizi buraya yazmaya başlayın..." id="exercise-text-area" oninput="app.updateExerciseStats()"></textarea>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Yazılan Kelime: <strong id="exercise-word-count">0</strong></span>
-                <button class="btn-primary" onclick="app.saveExerciseDraft()">Egzersizi Kaydet</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- View: Mekan Fotoğrafları (Location Moodboard) -->
-          <div id="view-locations" class="view-page" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-              <p style="color: var(--text-secondary);">Hikayelerinizdeki mekanlar için atmosfer ve ilham galerisi</p>
-              <button class="btn-primary" onclick="app.openAddLocationModal()">+ Yeni Mekan Ekle</button>
-            </div>
-            <div class="locations-grid" id="locations-grid-container">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
-
-          <!-- View: Asistan Yazar (AI Co-pilot) -->
-          <div id="view-assistant" class="view-page" style="display: none;">
-            <div class="assistant-chat-container">
-              <div class="ai-message">
-                <div class="ai-avatar">🤖</div>
-                <div>
-                  <h4 style="font-family: var(--font-heading); color: var(--accent-primary);">Textination Yapay Zeka Asistanı</h4>
-                  <p style="margin-top: 0.5rem;">Merhaba! Hikayenizde tıkandığınız noktalarda karakter fikirleri, olay örgüsü kırılmaları, mekan betimlemeleri veya diyalog tavsiyeleri üretebilirim.</p>
-                </div>
-              </div>
-              <div class="prompt-suggestions">
-                <span class="suggestion-chip" onclick="app.askAssistant('Gothic bir kasaba için 3 gizemli karakter ismi ve özelliği öner.')">💡 Gizemli Karakter Fikirleri</span>
-                <span class="suggestion-chip" onclick="app.askAssistant('Polisiye hikayede beklenmedik bir ters köşe (plot twist) senaryosu yaz.')">⚡ Olay Örgüsü Ters Köşe</span>
-                <span class="suggestion-chip" onclick="app.askAssistant('Sisli bir gecede liman kasabası betimlemesi yaz.')">🌉 Mekan Betimlemesi</span>
-              </div>
-              <div class="form-group" style="margin-top: 1rem;">
-                <textarea id="ai-user-prompt" class="form-control" rows="3" placeholder="Asistan Yazara bir soru veya istek yazın..."></textarea>
-              </div>
-              <button class="btn-primary" onclick="app.runAssistantQuery()">Asistana Sor ✨</button>
-              <div id="ai-response-box" style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md); font-family: var(--font-editor); line-height: 1.8;"></div>
-            </div>
-          </div>
-
-          <!-- View: İlham Alıntıları -->
-          <div id="view-quotes" class="view-page" style="display: none;">
-            <div class="quotes-grid" id="quotes-grid-container">
-              <!-- Rendered via JS -->
             </div>
           </div>
 
@@ -326,8 +322,14 @@
           <textarea id="new-book-subject" class="form-control" rows="3" placeholder="Kitabın kısa konusu..."></textarea>
         </div>
         <div class="form-group">
-          <label style="font-weight: 600;">Kapak Görseli (İsteğe Bağlı URL)</label>
-          <input type="text" id="new-book-cover" class="form-control" placeholder="https://images.unsplash.com/...">
+          <label style="font-weight: 600;">Kapak Görseli (Resim Dosyası Seçin)</label>
+          <div class="file-drop-zone" onclick="document.getElementById('new-book-cover-file').click()">
+            <svg class="svg-icon" style="width: 2.2rem; height: 2.2rem; color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span id="new-book-file-label">Görsel Yüklemek İçin Tıklayın veya Dosya Sürükleyin</span>
+            <input type="file" id="new-book-cover-file" accept="image/*" style="display: none;" onchange="app.handleCoverFileSelect(event, 'new-cover-preview', 'new-cover-data')">
+            <img id="new-cover-preview" class="file-drop-preview" alt="Kapak Önizleme">
+            <input type="hidden" id="new-cover-data">
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -337,7 +339,7 @@
     </div>
   </div>
 
-  <!-- MODAL: Polisiye Pano Kişi Ekle / Düzenle -->
+  <!-- MODAL: Polisiye Pano Kişi Oluştur / Düzenle -->
   <div class="modal-overlay" id="modal-person">
     <div class="modal-card">
       <div class="modal-header">
@@ -346,35 +348,72 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="person-id">
+        
         <div class="form-group">
           <label style="font-weight: 600;">Ad Soyad</label>
           <input type="text" id="person-name" class="form-control" placeholder="Ahmet Yılmaz">
         </div>
-        <div class="form-group">
-          <label style="font-weight: 600;">Kişilik / Baskın Özellik</label>
-          <input type="text" id="person-trait" class="form-control" placeholder="İçine kapanık dedektif">
-        </div>
+
         <div style="display: flex; gap: 1rem;">
           <div class="form-group" style="flex: 1;">
-            <label style="font-weight: 600;">Yaş</label>
-            <input type="text" id="person-age" class="form-control" placeholder="32">
+            <label style="font-weight: 600;">Rol / Görev</label>
+            <select id="person-job-select" class="form-control">
+              <option value="Dedektif">Dedektif / Araştırmacı</option>
+              <option value="Şüpheli">Baş Şüpheli</option>
+              <option value="Kurban">Kurban</option>
+              <option value="Tanık">Kilit Tanık</option>
+              <option value="İtirafçı">İtirafçı / Bilgi Kaynağı</option>
+              <option value="Sırdaş">Sırdaş / Müttefik</option>
+              <option value="Suç Ortağı">Suç Ortağı</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label style="font-weight: 600;">Yaş Grubu</label>
+            <select id="person-age-select" class="form-control">
+              <option value="Genç (18-25)">Genç (18-25)</option>
+              <option value="Yetişkin (26-45)" selected>Yetişkin (26-45)</option>
+              <option value="Orta Yaş (46-60)">Orta Yaş (46-60)</option>
+              <option value="Kıdemli (60+)">Kıdemli (60+)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+          <div class="form-group" style="flex: 1;">
+            <label style="font-weight: 600;">Kişilik Yapısı & Mizaç</label>
+            <select id="person-trait-select" class="form-control">
+              <option value="Analitik & Soğukkanlı">Analitik & Soğukkanlı</option>
+              <option value="Melankolik & İçe Kapanık">Melankolik & İçe Kapanık</option>
+              <option value="Maceracı & Cesur">Maceracı & Cesur</option>
+              <option value="Gizemli & Ketum">Gizemli & Ketum</option>
+              <option value="Hırslı & Kararlı">Hırslı & Kararlı</option>
+              <option value="Manipülatif & Zeki">Manipülatif & Zeki</option>
+            </select>
           </div>
           <div class="form-group" style="flex: 1;">
             <label style="font-weight: 600;">Cinsiyet</label>
-            <input type="text" id="person-gender" class="form-control" placeholder="Erkek / Kadın">
+            <select id="person-gender-select" class="form-control">
+              <option value="Erkek">Erkek</option>
+              <option value="Kadın">Kadın</option>
+              <option value="Belirtilmemiş">Belirtilmemiş</option>
+            </select>
           </div>
         </div>
+
         <div class="form-group">
-          <label style="font-weight: 600;">Meslek / Rol</label>
-          <input type="text" id="person-job" class="form-control" placeholder="Araştırmacı Gazeteci">
+          <label style="font-weight: 600;">Renk Etiketi (Fairycore Botanik Palet)</label>
+          <select id="person-color-select" class="form-control">
+            <option value="#1b4332">Orman Yeşili (Dedektif / Ana Karakter)</option>
+            <option value="#40916c">Adaçayı Yeşili (Müttefik / Sırdaş)</option>
+            <option value="#9e2a2b">Kadife Kırmızı (Şüpheli / Tehlike)</option>
+            <option value="#b08968">Kehribar Sarısı (Tanık / Bilgi)</option>
+            <option value="#2b2d42">Gece Slate (Karanlık / Gizem)</option>
+          </select>
         </div>
+
         <div class="form-group">
-          <label style="font-weight: 600;">Renk Etiketi</label>
-          <input type="color" id="person-color" class="form-control" value="#3498db" style="height: 40px; padding: 2px;">
-        </div>
-        <div class="form-group">
-          <label style="font-weight: 600;">Karakter Biyografisi / Notlar</label>
-          <textarea id="person-bio" class="form-control" rows="3"></textarea>
+          <label style="font-weight: 600;">Karakter Biyografisi & Olay Notları</label>
+          <textarea id="person-bio" class="form-control" rows="3" placeholder="Karakterin geçmişi, motivasyonu ve vakadaki konumu..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -384,7 +423,53 @@
     </div>
   </div>
 
-  <!-- MODAL: İki Kişi Arasında İlişki Bağla -->
+  <!-- MODAL: Karakter Dosyası Sheet -->
+  <div class="modal-overlay" id="modal-dossier-sheet">
+    <div class="modal-card" style="max-width: 600px; background: transparent; border: none; box-shadow: none;">
+      <div class="dossier-sheet">
+        <div class="dossier-clip"></div>
+        
+        <div class="dossier-header">
+          <div>
+            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-primary);">Imagefiction Karakter Dosyası</span>
+            <h2 id="dossier-name" style="font-family: var(--font-heading); font-size: 1.6rem; margin-top: 0.2rem;">-</h2>
+          </div>
+          <div class="dossier-stamp">GİZLİ / POLİSİYE DOKÜMAN</div>
+        </div>
+
+        <div class="dossier-section-title">Temel Özellikler & Profil</div>
+
+        <div class="dossier-grid">
+          <div class="dossier-field">
+            <span class="dossier-label">Rol / Görev</span>
+            <span class="dossier-value" id="dossier-job">-</span>
+          </div>
+          <div class="dossier-field">
+            <span class="dossier-label">Yaş Grubu</span>
+            <span class="dossier-value" id="dossier-age">-</span>
+          </div>
+          <div class="dossier-field">
+            <span class="dossier-label">Kişilik Yapısı</span>
+            <span class="dossier-value" id="dossier-trait">-</span>
+          </div>
+          <div class="dossier-field">
+            <span class="dossier-label">Cinsiyet</span>
+            <span class="dossier-value" id="dossier-gender">-</span>
+          </div>
+        </div>
+
+        <div class="dossier-section-title">Detaylı Biyografi & Olay Notları</div>
+        <p id="dossier-bio" style="font-family: var(--font-editor); font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem; background: rgba(0,0,0,0.03); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--accent-primary);"></p>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--papyrus-border); padding-top: 1rem;">
+          <span style="font-size: 0.75rem; color: #655b4b;" id="dossier-book-tag">Ait Olduğu Kitap: -</span>
+          <button class="btn-primary" onclick="app.closeModal('modal-dossier-sheet')">Kapat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: İlişki Bağla -->
   <div class="modal-overlay" id="modal-relation">
     <div class="modal-card">
       <div class="modal-header">
@@ -412,35 +497,7 @@
       </div>
       <div class="modal-footer">
         <button class="tool-btn" onclick="app.closeModal('modal-relation')">İptal</button>
-        <button class="btn-primary" onclick="app.saveRelation()">İlişkiyi Bağla 🔗</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: Mekan Fotoğrafı Ekle -->
-  <div class="modal-overlay" id="modal-location">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 class="modal-title">Mekan İlhamı Ekle</h3>
-        <button class="btn-icon" onclick="app.closeModal('modal-location')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label style="font-weight: 600;">Mekan Adı</label>
-          <input type="text" id="loc-title" class="form-control" placeholder="Örn: Eski Saat Kulesi">
-        </div>
-        <div class="form-group">
-          <label style="font-weight: 600;">Açıklama / Atmosfer</label>
-          <textarea id="loc-desc" class="form-control" rows="3" placeholder="Sarmal merdivenli, sisli ve nemli hava..."></textarea>
-        </div>
-        <div class="form-group">
-          <label style="font-weight: 600;">Görsel URL</label>
-          <input type="text" id="loc-img" class="form-control" placeholder="https://images.unsplash.com/...">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="tool-btn" onclick="app.closeModal('modal-location')">İptal</button>
-        <button class="btn-primary" onclick="app.saveLocation()">Ekle 🖼️</button>
+        <button class="btn-primary" onclick="app.saveRelation()">İlişkiyi Bağla</button>
       </div>
     </div>
   </div>

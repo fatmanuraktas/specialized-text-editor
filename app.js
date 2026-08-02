@@ -1,13 +1,23 @@
 /* ==========================================================================
-   TEXTINATION - Modern Web Yazar Editörü & Polisiye Pano App Engine
+   IMAGEFICTION - Glassmorphic Engine with Sound Effects, Panning & Zoom Controls
    ========================================================================== */
 
-class TextinationApp {
+class ImagefictionApp {
   constructor() {
     this.currentBookTitle = null;
     this.currentBookTab = 'editor';
+
+    // Corkboard Node Dragging State
     this.draggedNode = null;
     this.dragOffset = { x: 0, y: 0 };
+
+    // Canvas Panning & Zooming State
+    this.zoomLevel = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    this.isPanning = false;
+    this.panStart = { x: 0, y: 0 };
+
     this.activeRelationFilters = {
       Aile: true,
       Arkadaşlık: true,
@@ -15,49 +25,93 @@ class TextinationApp {
       Düşmanlık: true
     };
 
-    // Preset prompts for writing exercises
-    this.promptsPool = [
-      "Eski bir kütüphanede bulduğun haritanın üzerinde adın yazıyordu. Olaylar nasıl gelişir?",
-      "Kasabanın tek saat kulesi gece yarısından sonra tersine işlemeye başlar...",
-      "Yıllar önce kaybolan ikiz kardeşinden gelen isimsiz bir mektup aldın.",
-      "Gecenin son treninde sadece sen ve yüzünü gizleyen bir yolcu var.",
-      "Bir tabloya her baktığında içindeki detayların yer değiştirdiğini fark ediyorsun."
-    ];
+    // Initialize Web Audio API Context
+    this.initAudioContext();
 
-    // Initialize application state
+    // Initialize state & listeners
     this.loadState();
     this.initEventListeners();
     this.applyTheme();
-    this.renderCurrentView();
+    this.renderCurrentView('Kitaplarım');
   }
 
   /* ------------------------------------------------------------------------
-     STATE MANAGEMENT & LOCAL STORAGE PERSISTENCE
+     1. WEB AUDIO API SOUND EFFECTS SYSTEM
+     ------------------------------------------------------------------------ */
+  initAudioContext() {
+    this.audioCtx = null;
+  }
+
+  getAudioContext() {
+    if (!this.audioCtx) {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) {
+        this.audioCtx = new AudioCtxClass();
+      }
+    }
+    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume();
+    }
+    return this.audioCtx;
+  }
+
+  playClickSound(freq = 460, type = 'sine', duration = 0.04) {
+    try {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + duration);
+
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {
+      // Audio context fallbacks silently
+    }
+  }
+
+  playPopSound() {
+    this.playClickSound(580, 'triangle', 0.06);
+  }
+
+  playZoomSound() {
+    this.playClickSound(340, 'sine', 0.05);
+  }
+
+  /* ------------------------------------------------------------------------
+     2. STATE MANAGEMENT & LOCAL STORAGE PERSISTENCE
      ------------------------------------------------------------------------ */
   loadState() {
-    const saved = localStorage.getItem('textination_state');
+    const saved = localStorage.getItem('imagefiction_state');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         this.userProfile = parsed.userProfile;
         this.savedBooks = parsed.savedBooks;
-        this.characterTemplates = parsed.characterTemplates;
         this.bookPersons = parsed.bookPersons;
         this.bookRelations = parsed.bookRelations;
-        this.locations = parsed.locations || this.getDefaultLocations();
         this.isDarkMode = parsed.isDarkMode || false;
         return;
       } catch (e) {
-        console.error("Failed to parse saved state", e);
+        console.error("State parse error", e);
       }
     }
 
-    // Default state derived from PyQt6 yazar_editoru.py
     this.isDarkMode = false;
     this.userProfile = {
       name: "Antigravity Yazar",
-      email: "yazar@textination.com",
-      bio: "Textination üzerinde hikayeler kaleme alan tutkulu bir yazar.",
+      email: "yazar@imagefiction.com",
+      bio: "Imagefiction platformunda hikayeler ve polisiye vakalar kurgulayan tutkulu yazar.",
       avatarPath: ""
     };
 
@@ -71,60 +125,22 @@ class TextinationApp {
       },
       {
         title: "Sisli Şehir",
-        subject: "Gizemli olayların yaşandığı kasabada geçen macera.",
+        subject: "Gizemli olayların yaşandığı kasabada geçen polisiye macera.",
         cover: "https://images.unsplash.com/photo-1485871981521-5b1017957861?q=80&w=800&auto=format&fit=crop",
         author: "Antigravity Yazar",
         content: "Kasabaya ilk kar düşüp yoğun bir sis kapladığında, herkes kütüphanenin ışıklarının ansızın söndüğünü fark etti. Doktor Canan Şahin, elindeki fenerle kütüphaneye doğru adımlarken sisin arasından fısıltılar yükseliyordu..."
       }
     ];
 
-    this.characterTemplates = [
-      {
-        id: "tpl_1",
-        trait: "İçine kapanık memur",
-        age: "32",
-        gender: "Erkek",
-        job: "Kütüphaneci",
-        demographics: "Kentli orta sınıf",
-        politics: "Apolitik",
-        bio: "Kurallara bağlı, sessiz, eski haritalar konusunda uzman bir kamu çalışanı.",
-        color: "#3498DB"
-      },
-      {
-        id: "tpl_2",
-        trait: "Hırslı akademisyen",
-        age: "29",
-        gender: "Kadın",
-        job: "Biyokimya Araştırmacısı",
-        demographics: "Üst orta sınıf",
-        politics: "Sosyal Demokrat",
-        bio: "Kendi laboratuvarını kurmak isteyen idealist bilim insanı.",
-        color: "#E74C3C"
-      },
-      {
-        id: "tpl_3",
-        trait: "Eski tüfek dedektif",
-        age: "55",
-        gender: "Erkek",
-        job: "Emekli Polis",
-        demographics: "Geleneksel mahalle sakini",
-        politics: "Muhafazakar",
-        bio: "Yılların birikimiyle insanları ilk bakışta çözen tecrübeli gözlemci.",
-        color: "#27AE60"
-      }
-    ];
-
     this.bookPersons = [
-      // Zamanın Ötesinde
-      { id: "p1", name: "Ahmet Yılmaz", book_title: "Zamanın Ötesinde", trait: "İçine kapanık memur", age: "32", gender: "Erkek", job: "Araştırmacı Dedektif", bio: "Geceleri saha araştırması yapan eski memur.", color: "#3498DB", x: 120, y: 150 },
-      { id: "p2", name: "Zeynep Kaya", book_title: "Zamanın Ötesinde", trait: "Hırslı akademisyen", age: "29", gender: "Kadın", job: "Biyokimyager", bio: "Vakadaki anahtar delilleri inceleyen uzman.", color: "#E74C3C", x: 380, y: 120 },
-      { id: "p3", name: "Mehmet Demir", book_title: "Zamanın Ötesinde", trait: "Eski tüfek dedektif", age: "55", gender: "Erkek", job: "Kütüphaneci", bio: "Ahmet'in amcası ve danışmanı.", color: "#27AE60", x: 220, y: 350 },
-      { id: "p4", name: "Elif Demir", book_title: "Zamanın Ötesinde", trait: "Genç gazeteci", age: "24", gender: "Kadın", job: "Muhabir", bio: "Mehmet'in kızı ve olayın izini süren muhabir.", color: "#F39C12", x: 480, y: 320 },
+      { id: "p1", name: "Ahmet Yılmaz", book_title: "Zamanın Ötesinde", trait: "Analitik & Soğukkanlı", age: "Yetişkin (26-45)", gender: "Erkek", job: "Dedektif", bio: "Geceleri saha araştırması yapan tecrübeli araştırmacı dedektif.", color: "#1b4332", x: 180, y: 220 },
+      { id: "p2", name: "Zeynep Kaya", book_title: "Zamanın Ötesinde", trait: "Hırslı & Kararlı", age: "Yetişkin (26-45)", gender: "Kadın", job: "İtirafçı", bio: "Vakadaki anahtar delilleri inceleyen biyokimya uzmanı.", color: "#9e2a2b", x: 520, y: 200 },
+      { id: "p3", name: "Mehmet Demir", book_title: "Zamanın Ötesinde", trait: "Gizemli & Ketum", age: "Kıdemli (60+)", gender: "Erkek", job: "Sırdaş", bio: "Ahmet'in eski danışmanı ve sahaflar çarşısı işletmecisi.", color: "#40916c", x: 300, y: 520 },
+      { id: "p4", name: "Elif Demir", book_title: "Zamanın Ötesinde", trait: "Maceracı & Cesur", age: "Genç (18-25)", gender: "Kadın", job: "Tanık", bio: "Olay yerinde ilk görülen ve gizli kayıtlar tutan genç gazeteci.", color: "#b08968", x: 680, y: 480 },
 
-      // Sisli Şehir
-      { id: "p5", name: "Canan Şahin", book_title: "Sisli Şehir", trait: "Gizemli kasaba doktoru", age: "34", gender: "Kadın", job: "Doktor", bio: "Kasabadaki sırları çözen hekim.", color: "#9B59B6", x: 160, y: 180 },
-      { id: "p6", name: "Burak Şahin", book_title: "Sisli Şehir", trait: "Canan'ın kardeşi", age: "28", gender: "Erkek", job: "Eczacı", bio: "Canan'ın öz kardeşi.", color: "#1ABC9C", x: 420, y: 180 },
-      { id: "p7", name: "Deniz Arslan", book_title: "Sisli Şehir", trait: "Araştırmacı gazeteci", age: "31", gender: "Erkek", job: "Gazeteci", bio: "Canan ile ortak hareket eden gazeteci.", color: "#E67E22", x: 290, y: 360 }
+      { id: "p5", name: "Canan Şahin", book_title: "Sisli Şehir", trait: "Analitik & Soğukkanlı", age: "Yetişkin (26-45)", gender: "Kadın", job: "Dedektif", bio: "Kasabadaki sırları çözmeye kararlı hekim.", color: "#1b4332", x: 220, y: 240 },
+      { id: "p6", name: "Burak Şahin", book_title: "Sisli Şehir", trait: "Melankolik & İçe Kapanık", age: "Yetişkin (26-45)", gender: "Erkek", job: "Şüpheli", bio: "Canan'ın öz kardeşi ve eski eczacı.", color: "#9e2a2b", x: 560, y: 240 },
+      { id: "p7", name: "Deniz Arslan", book_title: "Sisli Şehir", trait: "Gizemli & Ketum", age: "Yetişkin (26-45)", gender: "Erkek", job: "Sırdaş", bio: "Canan ile ortak hareket eden saha araştırmacısı.", color: "#40916c", x: 380, y: 500 }
     ];
 
     this.bookRelations = [
@@ -138,51 +154,44 @@ class TextinationApp {
       { id: "r7", from_id: "p5", to_id: "p7", type: "Aşk", book_title: "Sisli Şehir" }
     ];
 
-    this.locations = this.getDefaultLocations();
     this.saveState();
-  }
-
-  getDefaultLocations() {
-    return [
-      { title: "Tarihi Saat Kulesi", desc: "Sisli gecelerde tiktak sesleri tüm kasabada yankılanır.", img: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?q=80&w=800&auto=format&fit=crop" },
-      { title: "Eski Sahaflar Çarşısı", desc: "Tozlu raflar ve sararmış elyazmalarının kokusu hakimdir.", img: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=800&auto=format&fit=crop" },
-      { title: "Liman Feneri", desc: "Denizden gelen fırtınada dalgaların dövdüğü kayalıkların tepesinde.", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800&auto=format&fit=crop" }
-    ];
   }
 
   saveState() {
     const data = {
       userProfile: this.userProfile,
       savedBooks: this.savedBooks,
-      characterTemplates: this.characterTemplates,
       bookPersons: this.bookPersons,
       bookRelations: this.bookRelations,
-      locations: this.locations,
       isDarkMode: this.isDarkMode
     };
-    localStorage.setItem('textination_state', JSON.stringify(data));
+    localStorage.setItem('imagefiction_state', JSON.stringify(data));
   }
 
   /* ------------------------------------------------------------------------
-     NAVIGATION & SCREEN CONTROLLER
+     3. NAVIGATION & THEME CONTROLLER
      ------------------------------------------------------------------------ */
   showScreen(screenId) {
+    this.playClickSound();
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(screenId);
     if (target) target.classList.add('active');
   }
 
   handleGoogleLogin() {
-    this.showToast("Google ile hızlı giriş yapıldı! Hoş geldiniz.");
+    this.playPopSound();
+    this.showToast("Google ile giriş yapıldı.");
     this.showScreen('main-screen');
   }
 
   toggleSidebar() {
+    this.playClickSound();
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('collapsed');
   }
 
   toggleTheme() {
+    this.playClickSound();
     this.isDarkMode = !this.isDarkMode;
     this.applyTheme();
     this.saveState();
@@ -190,30 +199,30 @@ class TextinationApp {
 
   applyTheme() {
     document.documentElement.setAttribute('data-theme', this.isDarkMode ? 'dark' : 'light');
-    const icon = document.getElementById('theme-icon');
-    if (icon) icon.textContent = this.isDarkMode ? '☀️' : '🌙';
+    const container = document.getElementById('theme-icon-svg');
+    if (container) {
+      container.innerHTML = this.isDarkMode 
+        ? `<svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2"/><line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2"/><line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"/></svg>`
+        : `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" fill="none"/></svg>`;
+    }
   }
 
   navigate(segmentName) {
-    // Update active state in sidebar
+    this.playClickSound();
     document.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.getAttribute('data-segment') === segmentName);
     });
 
     document.getElementById('current-page-title').textContent = segmentName;
-
-    // Hide single book workspace if active
     document.getElementById('view-book-workspace').style.display = 'none';
 
-    // Hide all view pages
     const viewMap = {
       'Kitaplarım': 'view-books',
-      'Profil': 'view-profile',
-      'Karakter Dosyası': 'view-templates',
-      'Yazma Egzersizi': 'view-exercise',
-      'Mekan Fotoğrafları': 'view-locations',
-      'Asistan Yazar': 'view-assistant',
-      'İlham Alıntıları': 'view-quotes'
+      'İlişki Panosu': 'view-books',
+      'Yazma': 'view-books',
+      'İlişki Haritası': 'view-books',
+      'Karakterler': 'view-templates',
+      'Profil': 'view-profile'
     };
 
     Object.values(viewMap).forEach(id => {
@@ -221,25 +230,32 @@ class TextinationApp {
       if (el) el.style.display = 'none';
     });
 
-    const activeViewId = viewMap[segmentName];
-    if (activeViewId) {
-      const activeEl = document.getElementById(activeViewId);
-      if (activeEl) activeEl.style.display = 'block';
+    if (['Polisiye Pano', 'Yazma', 'İlişki Haritası'].includes(segmentName)) {
+      if (this.savedBooks.length > 0) {
+        const defaultBook = this.savedBooks[0];
+        const tabMap = { 'Yazma': 'editor', 'Polisiye Pano': 'corkboard', 'İlişki Haritası': 'relations' };
+        this.openBookWorkspace(defaultBook.title, tabMap[segmentName]);
+        return;
+      }
     }
+
+    const activeViewId = viewMap[segmentName] || 'view-books';
+    const activeEl = document.getElementById(activeViewId);
+    if (activeEl) activeEl.style.display = 'block';
 
     this.renderCurrentView(segmentName);
   }
 
   renderCurrentView(segmentName = 'Kitaplarım') {
-    if (segmentName === 'Kitaplarım') this.renderBooksGrid();
+    if (['Kitaplarım', 'Polisiye Pano', 'Yazma', 'İlişki Haritası'].includes(segmentName)) {
+      this.renderBooksGrid();
+    }
+    if (segmentName === 'Karakterler') this.renderTemplatesGrid();
     if (segmentName === 'Profil') this.renderProfileView();
-    if (segmentName === 'Karakter Dosyası') this.renderTemplatesGrid();
-    if (segmentName === 'Mekan Fotoğrafları') this.renderLocationsGrid();
-    if (segmentName === 'İlham Alıntıları') this.renderQuotesGrid();
   }
 
   /* ------------------------------------------------------------------------
-     1. KITAPLARIM (MY BOOKS) GRID & CREATION
+     4. KITAPLARIM GRID & CONTEXT MENU
      ------------------------------------------------------------------------ */
   renderBooksGrid() {
     const container = document.getElementById('books-grid-container');
@@ -255,16 +271,40 @@ class TextinationApp {
     this.savedBooks.forEach(book => {
       const coverBg = book.cover 
         ? `background-image: url('${book.cover}')`
-        : `background: linear-gradient(135deg, #6366f1, #ec4899)`;
+        : `background: linear-gradient(135deg, #1b4332, #40916c)`;
 
       html += `
-        <div class="book-card" onclick="app.openBookWorkspace('${this.escapeQuotes(book.title)}')">
-          <div class="book-cover" style="${coverBg}">
-            <div class="book-cover-title">${this.escapeHtml(book.title)}</div>
+        <div class="book-card">
+          <button class="book-menu-btn" onclick="app.toggleBookContextMenu(event, '${this.escapeQuotes(book.title)}')" title="Seçenekler">
+            <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+
+          <div class="book-context-menu" id="menu-${this.slugify(book.title)}">
+            <button class="menu-item-btn" onclick="app.openEditBookModal(event, '${this.escapeQuotes(book.title)}')">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+              <span>Düzenle</span>
+            </button>
+            <button class="menu-item-btn" onclick="app.openBookWorkspaceDirect(event, '${this.escapeQuotes(book.title)}', 'corkboard')">
+              <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/></svg>
+              <span>İlişkiyi Görüntüle</span>
+            </button>
+            <button class="menu-item-btn danger" onclick="app.deleteBookDirect(event, '${this.escapeQuotes(book.title)}')">
+              <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+              <span>Sil</span>
+            </button>
           </div>
-          <div class="book-info">
-            <p class="book-subject">${this.escapeHtml(book.subject || '')}</p>
-            <span class="book-author-tag">✍️ ${this.escapeHtml(book.author || 'Yazar')}</span>
+
+          <div class="book-card-inner" onclick="app.openBookWorkspace('${this.escapeQuotes(book.title)}')">
+            <div class="book-cover" style="${coverBg}">
+              <div class="book-cover-title">${this.escapeHtml(book.title)}</div>
+            </div>
+            <div class="book-info">
+              <p class="book-subject">${this.escapeHtml(book.subject || '')}</p>
+              <span class="book-author-tag">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                ${this.escapeHtml(book.author || 'Yazar')}
+              </span>
+            </div>
           </div>
         </div>
       `;
@@ -273,12 +313,51 @@ class TextinationApp {
     container.innerHTML = html;
   }
 
+  toggleBookContextMenu(event, bookTitle) {
+    event.stopPropagation();
+    this.playClickSound();
+    const menuId = `menu-${this.slugify(bookTitle)}`;
+    const menu = document.getElementById(menuId);
+    
+    document.querySelectorAll('.book-context-menu').forEach(m => {
+      if (m.id !== menuId) m.classList.remove('active');
+    });
+
+    if (menu) menu.classList.toggle('active');
+  }
+
+  handleCoverFileSelect(event, previewId, hiddenInputId) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.playPopSound();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const preview = document.getElementById(previewId);
+      const hiddenInput = document.getElementById(hiddenInputId);
+
+      if (preview) {
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+      }
+      if (hiddenInput) {
+        hiddenInput.value = dataUrl;
+      }
+      const fileLabel = document.getElementById('new-book-file-label');
+      if (fileLabel) fileLabel.textContent = `Yüklendi: ${file.name}`;
+    };
+    reader.readAsDataURL(file);
+  }
+
   openModal(modalId) {
+    this.playClickSound();
     const modal = document.getElementById(modalId);
     if (modal) modal.classList.add('active');
   }
 
   closeModal(modalId) {
+    this.playClickSound();
     const modal = document.getElementById(modalId);
     if (modal) modal.classList.remove('active');
   }
@@ -286,7 +365,7 @@ class TextinationApp {
   createBook() {
     const titleInput = document.getElementById('new-book-title');
     const subjectInput = document.getElementById('new-book-subject');
-    const coverInput = document.getElementById('new-book-cover');
+    const coverDataInput = document.getElementById('new-cover-data');
 
     const title = titleInput.value.trim();
     if (!title) {
@@ -294,10 +373,13 @@ class TextinationApp {
       return;
     }
 
+    this.playPopSound();
+    const coverUrl = coverDataInput.value || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop";
+
     const newBook = {
       title: title,
       subject: subjectInput.value.trim(),
-      cover: coverInput.value.trim(),
+      cover: coverUrl,
       author: this.userProfile.name,
       content: `${title}\n\nHikayenize buraya yazarak başlayın...`
     };
@@ -306,72 +388,118 @@ class TextinationApp {
     this.saveState();
     this.closeModal('modal-new-book');
     this.renderBooksGrid();
-    this.showToast(`"${title}" başarıyla oluşturuldu!`);
+    this.showToast(`"${title}" oluşturuldu.`);
 
     titleInput.value = '';
     subjectInput.value = '';
-    coverInput.value = '';
+    coverDataInput.value = '';
+    const preview = document.getElementById('new-cover-preview');
+    if (preview) preview.style.display = 'none';
 
     this.openBookWorkspace(title);
   }
 
+  openEditBookModal(event, bookTitle) {
+    event.stopPropagation();
+    this.closeAllContextMenus();
+    this.openBookWorkspace(bookTitle, 'settings');
+  }
+
+  openBookWorkspaceDirect(event, bookTitle, tabName) {
+    event.stopPropagation();
+    this.closeAllContextMenus();
+    this.openBookWorkspace(bookTitle, tabName);
+  }
+
+  deleteBookDirect(event, bookTitle) {
+    event.stopPropagation();
+    this.closeAllContextMenus();
+    if (!confirm(`"${bookTitle}" kitabını silmek istediğinize emin misiniz?`)) return;
+
+    this.playPopSound();
+    this.savedBooks = this.savedBooks.filter(b => b.title !== bookTitle);
+    this.bookPersons = this.bookPersons.filter(p => p.book_title !== bookTitle);
+    this.bookRelations = this.bookRelations.filter(r => r.book_title !== bookTitle);
+
+    this.saveState();
+    this.renderBooksGrid();
+    this.showToast("Kitap silindi.");
+  }
+
+  closeAllContextMenus() {
+    document.querySelectorAll('.book-context-menu').forEach(m => m.classList.remove('active'));
+  }
+
   /* ------------------------------------------------------------------------
-     2. SINGLE BOOK WORKSPACE (EDITOR + CORKBOARD + SETTINGS)
+     5. SINGLE BOOK WORKSPACE (YAZMA + POLİSİYE PANO)
      ------------------------------------------------------------------------ */
-  openBookWorkspace(bookTitle) {
+  openBookWorkspace(bookTitle, targetTab = 'editor') {
     const book = this.savedBooks.find(b => b.title === bookTitle);
     if (!book) return;
 
     this.currentBookTitle = bookTitle;
 
-    // Hide main view pages and show workspace
     document.querySelectorAll('.view-page').forEach(el => el.style.display = 'none');
     const ws = document.getElementById('view-book-workspace');
     ws.style.display = 'block';
 
     document.getElementById('current-page-title').textContent = `Kitap: ${bookTitle}`;
 
-    // Load content into editor
     const editor = document.getElementById('rich-editor-content');
     editor.innerText = book.content || '';
     this.onEditorInput();
 
-    // Populate Settings tab fields
     document.getElementById('setting-book-title').value = book.title;
     document.getElementById('setting-book-subject').value = book.subject || '';
-    document.getElementById('setting-book-cover').value = book.cover || '';
+    document.getElementById('setting-cover-data').value = book.cover || '';
 
-    // Default to editor subtab
-    this.switchBookTab('editor');
+    this.switchBookTab(targetTab);
   }
 
   closeBookWorkspace() {
+    this.playClickSound();
     this.saveCurrentBookText();
     this.navigate('Kitaplarım');
   }
 
   switchBookTab(tabName) {
+    this.playClickSound();
     this.currentBookTab = tabName;
-    const tabs = ['editor', 'corkboard', 'settings'];
-    tabs.forEach(t => {
-      const pane = document.getElementById(`subtab-${t}`);
-      if (pane) pane.style.display = (t === tabName) ? (t === 'editor' ? 'flex' : 'block') : 'none';
+    const panes = {
+      'editor': 'subtab-editor',
+      'corkboard': 'subtab-corkboard',
+      'relations': 'subtab-corkboard',
+      'settings': 'subtab-settings'
+    };
+
+    Object.values(panes).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
     });
 
-    // Update active tab buttons
+    const targetId = panes[tabName];
+    if (targetId) {
+      const el = document.getElementById(targetId);
+      if (el) el.style.display = (tabName === 'editor' ? 'flex' : 'block');
+    }
+
     document.querySelectorAll('.book-tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent.includes(tabName === 'editor' ? 'Yazım' : tabName === 'corkboard' ? 'Polisiye' : 'Ayarları'));
+      const text = btn.textContent.trim().toLowerCase();
+      btn.classList.toggle('active', 
+        (tabName === 'editor' && text.includes('yazma')) ||
+        (tabName === 'corkboard' && text.includes('polisiye')) ||
+        (tabName === 'relations' && text.includes('ilişki')) ||
+        (tabName === 'settings' && text.includes('ayarlar'))
+      );
     });
 
-    if (tabName === 'corkboard') {
+    if (tabName === 'corkboard' || tabName === 'relations') {
       this.renderCorkboard();
     }
   }
 
-  /* ------------------------------------------------------------------------
-     RICH TEXT EDITOR ACTIONS
-     ------------------------------------------------------------------------ */
   formatText(command) {
+    this.playClickSound();
     document.execCommand(command, false, null);
     this.onEditorInput();
   }
@@ -386,7 +514,6 @@ class TextinationApp {
     document.getElementById('stat-word-count').textContent = words;
     document.getElementById('stat-char-count').textContent = chars;
 
-    // Trigger debounced auto-save
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
       this.saveCurrentBookText();
@@ -403,7 +530,7 @@ class TextinationApp {
       
       const status = document.getElementById('editor-autosave-status');
       if (status) {
-        status.textContent = '✓ Otomatik Kaydedildi';
+        status.textContent = 'Otomatik Kaydedildi';
         status.style.opacity = '1';
         setTimeout(() => { status.style.opacity = '0.7'; }, 2000);
       }
@@ -411,12 +538,14 @@ class TextinationApp {
   }
 
   toggleFocusMode() {
+    this.playClickSound();
     const container = document.getElementById('editor-container');
     container.classList.toggle('focus-mode');
-    this.showToast(container.classList.contains('focus-mode') ? "Focus Mode Açıldı (Çıkmak için tekrar basınız)" : "Focus Mode Kapatıldı");
+    this.showToast(container.classList.contains('focus-mode') ? "Odak Modu Açıldı" : "Odak Modu Kapatıldı");
   }
 
   exportCurrentBookText() {
+    this.playPopSound();
     if (!this.currentBookTitle) return;
     const book = this.savedBooks.find(b => b.title === this.currentBookTitle);
     const content = book ? book.content : '';
@@ -426,17 +555,17 @@ class TextinationApp {
     link.href = URL.createObjectURL(blob);
     link.download = `${this.currentBookTitle}.txt`;
     link.click();
-    this.showToast("Kitap metni .txt olarak indirildi.");
+    this.showToast("Metin .txt olarak indirildi.");
   }
 
   saveBookSettings() {
+    this.playPopSound();
     if (!this.currentBookTitle) return;
     const book = this.savedBooks.find(b => b.title === this.currentBookTitle);
     if (!book) return;
 
     const newTitle = document.getElementById('setting-book-title').value.trim();
     if (newTitle && newTitle !== this.currentBookTitle) {
-      // Update book title in references
       this.bookPersons.forEach(p => { if (p.book_title === this.currentBookTitle) p.book_title = newTitle; });
       this.bookRelations.forEach(r => { if (r.book_title === this.currentBookTitle) r.book_title = newTitle; });
       book.title = newTitle;
@@ -444,10 +573,11 @@ class TextinationApp {
     }
 
     book.subject = document.getElementById('setting-book-subject').value.trim();
-    book.cover = document.getElementById('setting-book-cover').value.trim();
+    const coverData = document.getElementById('setting-cover-data').value;
+    if (coverData) book.cover = coverData;
 
     this.saveState();
-    this.showToast("Kitap ayarları güncellendi.");
+    this.showToast("Kitap ayarları kaydedildi.");
     document.getElementById('current-page-title').textContent = `Kitap: ${this.currentBookTitle}`;
   }
 
@@ -463,80 +593,142 @@ class TextinationApp {
   }
 
   /* ------------------------------------------------------------------------
-     3. POLİSİYE PANO (INTERACTIVE CORKBOARD & DYNAMIC SVG HARİTASI)
+     6. POLİSİYE PANO (CANVAS PANNING & SCALE ZOOM SYSTEM)
      ------------------------------------------------------------------------ */
   renderCorkboard() {
     const nodesLayer = document.getElementById('corkboard-nodes-layer');
     if (!nodesLayer) return;
 
     nodesLayer.innerHTML = '';
-
-    // Filter persons belonging to current active book
     const persons = this.bookPersons.filter(p => p.book_title === this.currentBookTitle);
 
     persons.forEach(p => {
       const node = document.createElement('div');
       node.className = 'person-node';
-      node.style.left = `${p.x || 150}px`;
-      node.style.top = `${p.y || 150}px`;
+      node.style.left = `${p.x || 200}px`;
+      node.style.top = `${p.y || 200}px`;
       node.setAttribute('data-id', p.id);
 
       const initial = p.name ? p.name[0].toUpperCase() : 'K';
 
       node.innerHTML = `
-        <div class="person-pin">📌</div>
-        <div class="person-avatar" style="background-color: ${p.color || '#3498db'};">
+        <div class="person-pin"></div>
+        <div class="person-avatar" style="background-color: ${p.color || '#1b4332'};">
           ${initial}
         </div>
         <div class="person-name">${this.escapeHtml(p.name)}</div>
-        ${p.trait ? `<div class="person-trait">(${this.escapeHtml(p.trait)})</div>` : ''}
+        <div class="person-trait">(${this.escapeHtml(p.job || 'Kişi')})</div>
       `;
 
-      // Add drag and double click listeners
       node.addEventListener('mousedown', (e) => this.startDragNode(e, p, node));
       node.addEventListener('dblclick', () => this.openEditPersonModal(p));
 
       nodesLayer.appendChild(node);
     });
 
+    this.applyViewportTransform();
     this.drawRelationLines();
   }
 
   startDragNode(e, personData, nodeElement) {
-    if (e.target.closest('.person-pin') || e.target.closest('.person-avatar') || e.target.closest('.person-name')) {
-      this.draggedNode = { data: personData, element: nodeElement };
-      const rect = nodeElement.getBoundingClientRect();
-      const parentRect = document.getElementById('corkboard-container').getBoundingClientRect();
-      this.dragOffset = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
+    e.stopPropagation();
+    this.playPopSound();
+    this.draggedNode = { data: personData, element: nodeElement };
+    
+    const parentRect = document.getElementById('corkboard-viewport').getBoundingClientRect();
+    
+    this.dragOffset = {
+      x: (e.clientX - parentRect.left) / this.zoomLevel - personData.x,
+      y: (e.clientY - parentRect.top) / this.zoomLevel - personData.y
+    };
 
-      const onMouseMove = (moveEvent) => {
-        if (!this.draggedNode) return;
-        const x = moveEvent.clientX - parentRect.left - this.dragOffset.x;
-        const y = moveEvent.clientY - parentRect.top - this.dragOffset.y;
+    const onMouseMove = (moveEvent) => {
+      if (!this.draggedNode) return;
 
-        personData.x = Math.max(10, Math.min(x, parentRect.width - 120));
-        personData.y = Math.max(10, Math.min(y, parentRect.height - 120));
+      const currentParentRect = document.getElementById('corkboard-viewport').getBoundingClientRect();
+      const x = (moveEvent.clientX - currentParentRect.left) / this.zoomLevel - this.dragOffset.x;
+      const y = (moveEvent.clientY - currentParentRect.top) / this.zoomLevel - this.dragOffset.y;
 
-        nodeElement.style.left = `${personData.x}px`;
-        nodeElement.style.top = `${personData.y}px`;
+      personData.x = Math.max(20, Math.min(x, 2800));
+      personData.y = Math.max(20, Math.min(y, 2200));
 
-        this.drawRelationLines();
-      };
+      nodeElement.style.left = `${personData.x}px`;
+      nodeElement.style.top = `${personData.y}px`;
 
-      const onMouseUp = () => {
-        if (this.draggedNode) {
-          this.saveState();
-          this.draggedNode = null;
-        }
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-      };
+      this.drawRelationLines();
+    };
 
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
+    const onMouseUp = () => {
+      if (this.draggedNode) {
+        this.saveState();
+        this.draggedNode = null;
+      }
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  initCanvasPanning() {
+    const container = document.getElementById('corkboard-container');
+    if (!container) return;
+
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.corkboard-toolbar') || e.target.closest('.corkboard-zoom-bar') || e.target.closest('.person-node')) {
+        return;
+      }
+
+      this.isPanning = true;
+      this.panStart = { x: e.clientX - this.panX, y: e.clientY - this.panY };
+      container.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isPanning) return;
+      this.panX = e.clientX - this.panStart.x;
+      this.panY = e.clientY - this.panStart.y;
+      this.applyViewportTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (this.isPanning) {
+        this.isPanning = false;
+        if (container) container.style.cursor = 'grab';
+      }
+    });
+
+    // Mouse Wheel Zooming
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      this.adjustZoom(delta);
+    }, { passive: false });
+  }
+
+  adjustZoom(delta) {
+    this.playZoomSound();
+    this.zoomLevel = Math.max(0.4, Math.min(1.8, this.zoomLevel + delta));
+    this.applyViewportTransform();
+  }
+
+  resetZoomAndPan() {
+    this.playPopSound();
+    this.zoomLevel = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    this.applyViewportTransform();
+  }
+
+  applyViewportTransform() {
+    const viewport = document.getElementById('corkboard-viewport');
+    if (viewport) {
+      viewport.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
+    }
+    const display = document.getElementById('zoom-value-display');
+    if (display) {
+      display.textContent = `${Math.round(this.zoomLevel * 100)}%`;
     }
   }
 
@@ -556,13 +748,11 @@ class TextinationApp {
       const pTo = activePersons.find(p => p.id === rel.to_id);
 
       if (pFrom && pTo) {
-        // Node center coordinates (node width ~110px, height ~100px)
-        const x1 = (pFrom.x || 150) + 55;
-        const y1 = (pFrom.y || 150) + 40;
-        const x2 = (pTo.x || 150) + 55;
-        const y2 = (pTo.y || 150) + 40;
+        const x1 = (pFrom.x || 200) + 70;
+        const y1 = (pFrom.y || 200) + 50;
+        const x2 = (pTo.x || 200) + 70;
+        const y2 = (pTo.y || 200) + 50;
 
-        // Create Line
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', x1);
         line.setAttribute('y1', y1);
@@ -572,7 +762,6 @@ class TextinationApp {
 
         svg.appendChild(line);
 
-        // Relation Label text at midpoint
         const midX = (x1 + x2) / 2;
         const midY = (y1 + y2) / 2;
 
@@ -588,20 +777,62 @@ class TextinationApp {
   }
 
   toggleRelationFilter(type, badgeEl) {
+    this.playClickSound();
     this.activeRelationFilters[type] = !this.activeRelationFilters[type];
     badgeEl.classList.toggle('active', this.activeRelationFilters[type]);
     this.drawRelationLines();
+  }
+
+  /* ------------------------------------------------------------------------
+     7. KARAKTERLER KLASÖRÜ & STRUCTURED PERSON CREATION
+     ------------------------------------------------------------------------ */
+  renderTemplatesGrid() {
+    const container = document.getElementById('templates-grid-container');
+    if (!container) return;
+
+    let html = '';
+    this.bookPersons.forEach(person => {
+      html += `
+        <div class="template-card" onclick="app.openDossierSheetModal('${person.id}')">
+          <span class="template-badge" style="background-color: ${person.color || '#1b4332'};">${this.escapeHtml(person.job || 'Kişi')}</span>
+          <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary);">${this.escapeHtml(person.name)}</h4>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">${this.escapeHtml(person.trait || '')}</p>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: auto; display: flex; justify-content: space-between;">
+            <span>Kitap: ${this.escapeHtml(person.book_title)}</span>
+            <span>Detayları Gör →</span>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  openDossierSheetModal(personId) {
+    this.playClickSound();
+    const person = this.bookPersons.find(p => p.id === personId);
+    if (!person) return;
+
+    document.getElementById('dossier-name').textContent = person.name;
+    document.getElementById('dossier-job').textContent = person.job || '-';
+    document.getElementById('dossier-age').textContent = person.age || '-';
+    document.getElementById('dossier-trait').textContent = person.trait || '-';
+    document.getElementById('dossier-gender').textContent = person.gender || '-';
+    document.getElementById('dossier-bio').textContent = person.bio || 'Biyografi bilgisi girilmemiş.';
+    document.getElementById('dossier-book-tag').textContent = `Ait Olduğu Kitap: ${person.book_title}`;
+
+    this.openModal('modal-dossier-sheet');
   }
 
   openCreatePersonModal() {
     document.getElementById('modal-person-title').textContent = 'Polisiye Panosuna Kişi Ekle';
     document.getElementById('person-id').value = '';
     document.getElementById('person-name').value = '';
-    document.getElementById('person-trait').value = '';
-    document.getElementById('person-age').value = '';
-    document.getElementById('person-gender').value = '';
-    document.getElementById('person-job').value = '';
-    document.getElementById('person-color').value = '#3498db';
+    document.getElementById('person-job-select').value = 'Dedektif';
+    document.getElementById('person-age-select').value = 'Yetişkin (26-45)';
+    document.getElementById('person-trait-select').value = 'Analitik & Soğukkanlı';
+    document.getElementById('person-gender-select').value = 'Erkek';
+    document.getElementById('person-color-select').value = '#1b4332';
     document.getElementById('person-bio').value = '';
 
     this.openModal('modal-person');
@@ -611,11 +842,11 @@ class TextinationApp {
     document.getElementById('modal-person-title').textContent = 'Kişi Detaylarını Düzenle';
     document.getElementById('person-id').value = person.id;
     document.getElementById('person-name').value = person.name;
-    document.getElementById('person-trait').value = person.trait || '';
-    document.getElementById('person-age').value = person.age || '';
-    document.getElementById('person-gender').value = person.gender || '';
-    document.getElementById('person-job').value = person.job || '';
-    document.getElementById('person-color').value = person.color || '#3498db';
+    document.getElementById('person-job-select').value = person.job || 'Dedektif';
+    document.getElementById('person-age-select').value = person.age || 'Yetişkin (26-45)';
+    document.getElementById('person-trait-select').value = person.trait || 'Analitik & Soğukkanlı';
+    document.getElementById('person-gender-select').value = person.gender || 'Erkek';
+    document.getElementById('person-color-select').value = person.color || '#1b4332';
     document.getElementById('person-bio').value = person.bio || '';
 
     this.openModal('modal-person');
@@ -624,44 +855,57 @@ class TextinationApp {
   savePerson() {
     const id = document.getElementById('person-id').value;
     const name = document.getElementById('person-name').value.trim();
+    
     if (!name) {
       this.showToast("Kişi adı boş bırakılamaz.");
       return;
     }
 
+    this.playPopSound();
+    const job = document.getElementById('person-job-select').value;
+    const age = document.getElementById('person-age-select').value;
+    const trait = document.getElementById('person-trait-select').value;
+    const gender = document.getElementById('person-gender-select').value;
+    const color = document.getElementById('person-color-select').value;
+    const bio = document.getElementById('person-bio').value.trim();
+
+    const bookTitle = this.currentBookTitle || (this.savedBooks[0] ? this.savedBooks[0].title : 'Vaka');
+
     if (id) {
-      // Edit existing person
       const p = this.bookPersons.find(item => item.id === id);
       if (p) {
         p.name = name;
-        p.trait = document.getElementById('person-trait').value.trim();
-        p.age = document.getElementById('person-age').value.trim();
-        p.gender = document.getElementById('person-gender').value.trim();
-        p.job = document.getElementById('person-job').value.trim();
-        p.color = document.getElementById('person-color').value;
-        p.bio = document.getElementById('person-bio').value.trim();
+        p.job = job;
+        p.age = age;
+        p.trait = trait;
+        p.gender = gender;
+        p.color = color;
+        p.bio = bio;
       }
     } else {
-      // Create new person
       const newP = {
         id: 'p_' + Date.now(),
         name: name,
-        book_title: this.currentBookTitle,
-        trait: document.getElementById('person-trait').value.trim(),
-        age: document.getElementById('person-age').value.trim(),
-        gender: document.getElementById('person-gender').value.trim(),
-        job: document.getElementById('person-job').value.trim(),
-        color: document.getElementById('person-color').value,
-        bio: document.getElementById('person-bio').value.trim(),
-        x: 200 + Math.random() * 200,
-        y: 150 + Math.random() * 150
+        book_title: bookTitle,
+        job: job,
+        age: age,
+        trait: trait,
+        gender: gender,
+        color: color,
+        bio: bio,
+        x: 240 + Math.random() * 300,
+        y: 200 + Math.random() * 200
       };
       this.bookPersons.push(newP);
     }
 
     this.saveState();
     this.closeModal('modal-person');
-    this.renderCorkboard();
+
+    if (this.currentBookTab === 'corkboard' || this.currentBookTab === 'relations') {
+      this.renderCorkboard();
+    }
+    this.renderTemplatesGrid();
     this.showToast("Kişi bilgileri kaydedildi.");
   }
 
@@ -691,6 +935,7 @@ class TextinationApp {
       return;
     }
 
+    this.playPopSound();
     const newRel = {
       id: 'r_' + Date.now(),
       from_id: fromId,
@@ -707,7 +952,7 @@ class TextinationApp {
   }
 
   /* ------------------------------------------------------------------------
-     4. PROFIL (PROFILE) VIEW
+     8. PROFIL VIEW
      ------------------------------------------------------------------------ */
   renderProfileView() {
     document.getElementById('profile-display-name').textContent = this.userProfile.name;
@@ -720,6 +965,7 @@ class TextinationApp {
   }
 
   saveProfile() {
+    this.playPopSound();
     const name = document.getElementById('profile-input-name').value.trim();
     const email = document.getElementById('profile-input-email').value.trim();
     const bio = document.getElementById('profile-input-bio').value.trim();
@@ -740,175 +986,7 @@ class TextinationApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. KARAKTER DOSYASI (TEMPLATES & DRAFT BANK)
-     ------------------------------------------------------------------------ */
-  renderTemplatesGrid() {
-    const container = document.getElementById('templates-grid-container');
-    if (!container) return;
-
-    let html = '';
-    this.characterTemplates.forEach(tpl => {
-      html += `
-        <div class="template-card">
-          <span class="template-badge" style="background-color: ${tpl.color || '#6366f1'};">${this.escapeHtml(tpl.trait)}</span>
-          <h4 style="font-family: var(--font-heading); font-size: 1.1rem;">${this.escapeHtml(tpl.job || 'Meslek Belirtilmemiş')}</h4>
-          <p style="font-size: 0.85rem; color: var(--text-secondary);">${this.escapeHtml(tpl.bio || '')}</p>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">
-            <span>Demografi: ${this.escapeHtml(tpl.demographics || 'Belirtilmedi')}</span> | 
-            <span>Yaş: ${this.escapeHtml(tpl.age || '-')}</span>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  }
-
-  openCreateTemplateModal() {
-    const trait = prompt("Şablon Karakter Tipi (Örn: Korkusuz Gazeteci):");
-    if (!trait) return;
-
-    const newTpl = {
-      id: 'tpl_' + Date.now(),
-      trait: trait,
-      age: "30",
-      gender: "Belirtilmedi",
-      job: "Araştırmacı",
-      demographics: "Kentli",
-      bio: "Kullanıcı tarafından oluşturulan ilham şablonu.",
-      color: "#ec4899"
-    };
-
-    this.characterTemplates.push(newTpl);
-    this.saveState();
-    this.renderTemplatesGrid();
-    this.showToast("Yeni karakter şablonu eklendi.");
-  }
-
-  /* ------------------------------------------------------------------------
-     6. YAZMA EGZERSİZİ (WRITING EXERCISES)
-     ------------------------------------------------------------------------ */
-  generateRandomPrompt() {
-    const random = this.promptsPool[Math.floor(Math.random() * this.promptsPool.length)];
-    document.getElementById('exercise-prompt-text').textContent = `"${random}"`;
-  }
-
-  updateExerciseStats() {
-    const text = document.getElementById('exercise-text-area').value || '';
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    document.getElementById('exercise-word-count').textContent = words;
-  }
-
-  saveExerciseDraft() {
-    this.showToast("Egzersiz taslağınız kaydedildi! ✍️");
-  }
-
-  /* ------------------------------------------------------------------------
-     7. MEKAN FOTOĞRAFLARI (LOCATION MOODBOARD)
-     ------------------------------------------------------------------------ */
-  renderLocationsGrid() {
-    const container = document.getElementById('locations-grid-container');
-    if (!container) return;
-
-    let html = '';
-    this.locations.forEach(loc => {
-      html += `
-        <div class="location-card">
-          <div class="location-img" style="background-image: url('${loc.img}');"></div>
-          <div class="location-content">
-            <h4 style="font-family: var(--font-heading); font-size: 1.05rem;">${this.escapeHtml(loc.title)}</h4>
-            <p style="font-size: 0.85rem; color: var(--text-secondary);">${this.escapeHtml(loc.desc)}</p>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  }
-
-  openAddLocationModal() {
-    this.openModal('modal-location');
-  }
-
-  saveLocation() {
-    const title = document.getElementById('loc-title').value.trim();
-    const desc = document.getElementById('loc-desc').value.trim();
-    let img = document.getElementById('loc-img').value.trim();
-
-    if (!title) return;
-    if (!img) img = "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop";
-
-    this.locations.push({ title, desc, img });
-    this.saveState();
-    this.closeModal('modal-location');
-    this.renderLocationsGrid();
-    this.showToast("Mekan ilhamı eklendi.");
-  }
-
-  /* ------------------------------------------------------------------------
-     8. ASİSTAN YAZAR (AI CO-PILOT ASSISTANT)
-     ------------------------------------------------------------------------ */
-  askAssistant(query) {
-    document.getElementById('ai-user-prompt').value = query;
-    this.runAssistantQuery();
-  }
-
-  runAssistantQuery() {
-    const promptText = document.getElementById('ai-user-prompt').value.trim();
-    if (!promptText) return;
-
-    const box = document.getElementById('ai-response-box');
-    box.style.display = 'block';
-    box.innerHTML = `<em>Textination AI üretiliyor... ✨</em>`;
-
-    setTimeout(() => {
-      let response = "";
-      if (promptText.includes('karakter') || promptText.includes('Gothic')) {
-        response = `<strong>✨ 3 Gothic Karakter Fikri:</strong><br><br>
-        1. <strong>Valerie Vance (Saat Ustası):</strong> Eski saatin içinde saklı gizli pusulayı koruyan, gümüş gözlü zanaatkar.<br>
-        2. <strong>Gabriel Thorne (Nefesli Çalgı Yapımcısı):</strong> Gece vakti enstrüman çaldığında kasabadaki sisin yön değiştirdiği söylenen münzevi.<br>
-        3. <strong>Serafina Black (Nadir Kitaplar Koleksiyoneri):</strong> Kütüphanedeki yasaklı elyazmalarını çözen hırslı araştırmacı.`;
-      } else if (promptText.includes('ters köşe') || promptText.includes('twist')) {
-        response = `<strong>⚡ Polisiye Ters Köşe Senaryosu:</strong><br><br>
-        Dedektif, aylardır peşinde olduğu gizemli suç ortağının aslında kendi geçmişte yaşadığı hafıza kaybı sırasında unuttuğu eski kimliği olduğunu keşfeder. Vaka dosyasındaki mühürlü deliller, kendi el yazısıyla yazılmıştır!`;
-      } else {
-        response = `<strong>✨ Atmosferik Mekan Betimlemesi:</strong><br><br>
-        "Gecenin yoğun sisi limana çöktüğünde, deniz fenerinin zayıf ışığı sadece dalgaların köpüklerini aydınlatıyordu. Ahşap iskelenin gıcırtıları, rüzgarın ıslığıyla birleşip kasabaya doğru fısıldıyordu..."`;
-      }
-
-      box.innerHTML = response;
-    }, 600);
-  }
-
-  /* ------------------------------------------------------------------------
-     9. İLHAM ALINTILARI (INSPIRATIONAL QUOTES)
-     ------------------------------------------------------------------------ */
-  renderQuotesGrid() {
-    const container = document.getElementById('quotes-grid-container');
-    if (!container) return;
-
-    const quotes = [
-      { text: "İlk taslak sadece kendinize hikayeyi anlatmanızdır.", author: "Terry Pratchett" },
-      { text: "Yazarlık, gecenin bir yarısı kendi yarattığınız dünyada kaybolmaktır.", author: "Virginia Woolf" },
-      { text: "Eğer okumaya vaktiniz yoksa, yazmaya da vaktiniz (veya araçlarınıza) yok demektir.", author: "Stephen King" },
-      { text: "Kelime kelime, sayfa sayfa bir dünya inşa edilir.", author: "Haruki Murakami" }
-    ];
-
-    let html = '';
-    quotes.forEach(q => {
-      html += `
-        <div class="quote-card">
-          <div class="quote-body">"${this.escapeHtml(q.text)}"</div>
-          <div class="quote-author">— ${this.escapeHtml(q.author)}</div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  }
-
-  /* ------------------------------------------------------------------------
-     UI UTILITIES & TOAST ALERTS
+     9. UTILITIES & EVENT LISTENERS
      ------------------------------------------------------------------------ */
   showToast(message) {
     const container = document.getElementById('toast-container');
@@ -916,7 +994,7 @@ class TextinationApp {
 
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerHTML = `<span>ℹ️</span> <span>${this.escapeHtml(message)}</span>`;
+    toast.innerHTML = `<span>${this.escapeHtml(message)}</span>`;
 
     container.appendChild(toast);
 
@@ -941,17 +1019,34 @@ class TextinationApp {
     return String(str).replace(/'/g, "\\'");
   }
 
+  slugify(str) {
+    if (!str) return 'slug';
+    return String(str).toLowerCase().replace(/[^a-z0-9]/g, '-');
+  }
+
   initEventListeners() {
-    // Window resize event re-draws SVG lines
+    this.initCanvasPanning();
+
     window.addEventListener('resize', () => {
-      if (this.currentBookTab === 'corkboard') {
+      if (this.currentBookTab === 'corkboard' || this.currentBookTab === 'relations') {
         this.drawRelationLines();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.book-menu-btn') && !e.target.closest('.book-context-menu')) {
+        this.closeAllContextMenus();
+      }
+      
+      // Global sound effect for buttons, pills, badges, inputs
+      if (e.target.closest('button') || e.target.closest('.filter-badge') || e.target.closest('.nav-item') || e.target.closest('.book-card')) {
+        this.playClickSound();
       }
     });
   }
 }
 
-// Global initialization
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
-  window.app = new TextinationApp();
+  window.app = new ImagefictionApp();
 });
