@@ -6,6 +6,7 @@
   <title>Imagefiction - Polisiye Pano, Yazma & İlişki Haritası</title>
   <meta name="description" content="Minimalist Dijital Yazarlık, Polisiye Pano ve İlişki Haritası Platformu">
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231b4332'><path d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z'/></svg>">
 </head>
 <body>
 
@@ -27,7 +28,7 @@
         <p class="brand-tagline">"novel it and give it to the next person"</p>
       </div>
 
-      <button class="btn-hero" onclick="app.showScreen('login-screen')">
+      <button class="btn-hero" onclick="app.showScreen('main-screen')">
         <span>Başlat</span>
         <svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -95,6 +96,11 @@
           <button class="nav-item" data-segment="Profil" onclick="app.navigate('Profil')">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
             <span class="nav-text">Profil</span>
+          </button>
+
+          <button class="nav-item" data-segment="Yazar Stil & Markov" onclick="app.navigate('Yazar Stil & Markov')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="9" r="1.5" fill="currentColor"/></svg>
+            <span class="nav-text">Yazar Stil & Markov</span>
           </button>
         </nav>
 
@@ -182,13 +188,24 @@
                       <span style="margin-left: auto; color: var(--accent-secondary); font-weight: 600; font-size: 0.85rem;" id="editor-autosave-status">Otomatik Kaydedildi</span>
                     </div>
 
-                    <div class="editor-body-wrapper">
-                      <div class="rich-editor-paper" id="rich-editor-content" contenteditable="true" oninput="app.onEditorInput()">
-                        Gecenin karanlığı şehri kapladığında...
+                    <div class="editor-body-wrapper" id="editor-body-wrapper">
+                      <div class="editor-pages-container" id="editor-pages-container">
+                        <div class="paper-sheet" data-page="1">
+                          <div class="paper-sheet-header">
+                            <span>Sayfa 1</span>
+                          </div>
+                          <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true" data-page-index="0" oninput="app.onEditorInput()">
+                            Gecenin karanlığı şehri kapladığında...
+                          </div>
+                          <div class="paper-sheet-footer">
+                            <span>Imagefiction Taslak</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     <div class="editor-statusbar">
+                      <span>Sayfa: <strong id="stat-page-count">1</strong></span>
                       <span>Kelime Sayısı: <strong id="stat-word-count">0</strong></span>
                       <span>Karakter Sayısı: <strong id="stat-char-count">0</strong></span>
                     </div>
@@ -285,7 +302,7 @@
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label style="font-weight: 600;">Ad Soyad / Yazar Adı</label>
-                <input type="text" id="profile-input-name" class="form-control" value="Antigravity Yazar">
+                <input type="text" id="profile-input-name" class="form-control" value="Imagefiction Yazarı">
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label style="font-weight: 600;">E-posta</label>
@@ -296,6 +313,168 @@
                 <textarea id="profile-input-bio" class="form-control" rows="4">Imagefiction platformunda hikayeler kaleme alan tutkulu yazar.</textarea>
               </div>
               <button class="btn-primary" onclick="app.saveProfile()">Profili Güncelle</button>
+            </div>
+          </div>
+
+          <!-- View: Yazar Stil & Markov ML -->
+          <div id="view-markov" class="view-page" style="display: none;">
+            <!-- Header Banner -->
+            <div class="markov-hero-card">
+              <div class="markov-hero-content">
+                <span class="badge-tag">ML & AI Stil Katmanı</span>
+                <h2 style="font-family: var(--font-heading); margin-top: 0.4rem;">Yazar Karakteri & Markov Karar Ağacı Motoru</h2>
+                <p style="color: var(--text-secondary); margin-top: 0.4rem; max-width: 750px;">
+                  Yazdığınız tüm metinler ve eserler, özgün üslubunuzu koruyan yerel bir N-gram Markov Karar Ağacı (Decision Tree Trie) modeline dönüştürülür. Yapay zeka ve RAG katmanları eklense dahi kelime tercihleriniz ve üslubunuz korunur.
+                </p>
+              </div>
+            </div>
+
+            <!-- Model Analytics Cards -->
+            <div class="markov-stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-title">Eğitilen Kelime Hacmi</div>
+                <div class="stat-value" id="markov-stat-words">0</div>
+                <div class="stat-sub">Metin ve kitap külliyatı</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">🧠</div>
+                <div class="stat-title">Kelime Dağarcığı (Vocab)</div>
+                <div class="stat-value" id="markov-stat-vocab">0</div>
+                <div class="stat-sub">Benzersiz yazar sözcükleri</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">✨</div>
+                <div class="stat-title">Stil Zenginliği (TTR)</div>
+                <div class="stat-value" id="markov-stat-ttr">%0.0</div>
+                <div class="stat-sub">Type-Token Karakter Oranı</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">🌳</div>
+                <div class="stat-title">Karar Ağacı Derinliği</div>
+                <div class="stat-value" id="markov-stat-depth">3-Gram</div>
+                <div class="stat-sub">N-gram Trie Bağlam Seviyesi</div>
+              </div>
+            </div>
+
+            <!-- Main Interactive Studio Layout (2 Columns) -->
+            <div class="markov-studio-grid">
+              
+              <!-- Left Column: Karar Ağacı Görselleştirici & Metin Yükleme -->
+              <div class="studio-column">
+                <!-- Visualizer Card -->
+                <div class="profile-card">
+                  <div class="card-header-flex">
+                    <h3 style="font-family: var(--font-heading);">🌳 Markov Karar Ağacı Dallanma Görselleştirici</h3>
+                    <span class="badge-sub">Canlı Tahmin Düğümü</span>
+                  </div>
+                  <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Bir başlangıç kelimesi veya ifadesi girin; yazar modelinizin olasılıksal kararları ve sonraki kelime dallarını inceleyin:
+                  </p>
+                  <div class="form-group" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="markov-seed-input" class="form-control" placeholder="Örn: gecenin karanlığı" value="gecenin">
+                    <button class="btn-primary" onclick="app.inspectMarkovTree()">Dalları İncele</button>
+                  </div>
+
+                  <div id="markov-tree-visualizer-container" class="tree-visualizer-box">
+                    <!-- Dynamic decision tree nodes rendered via JS -->
+                  </div>
+                </div>
+
+                <!-- Model Dataset Trainer Card -->
+                <div class="profile-card" style="margin-top: 1.5rem;">
+                  <h3 style="font-family: var(--font-heading); margin-bottom: 0.5rem;">📥 Ek Yazar Üslup Verisi (Corpus) Yükle</h3>
+                  <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Önceki romanlarınızdan, denemelerinizden veya yazılarınızdan kesitler ekleyerek Markov Karar Ağacını kişiselleştirin:
+                  </p>
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <textarea id="markov-custom-corpus-text" class="form-control" rows="4" placeholder="Metninizi buraya yapıştırın veya .txt dosyası yükleyin..."></textarea>
+                  </div>
+                  <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="file" id="markov-file-input" accept=".txt" style="display: none;" onchange="app.handleCorpusFileUpload(event)">
+                    <button class="tool-btn" onclick="document.getElementById('markov-file-input').click()">📄 .txt Dosyası Yükle</button>
+                    <button class="btn-primary" style="margin-left: auto;" onclick="app.trainCustomCorpus()">Yazar Modeline Ekle & Eğit</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Üretim Sandbox & AI RAG Katmanı Mimarisi -->
+              <div class="studio-column">
+                
+                <!-- Markov Text Generator Sandbox -->
+                <div class="profile-card">
+                  <h3 style="font-family: var(--font-heading); margin-bottom: 0.5rem;">✍️ Yazar Karakteriyle Metin Üretim Sandbox</h3>
+                  <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Modelinizin yazar üslubunu kullanarak sonraki cümleleri nasıl ürettiğini test edin.
+                  </p>
+                  <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-weight: 600;">Başlangıç Tohumu (Seed Prompt)</label>
+                    <input type="text" id="markov-gen-seed" class="form-control" value="Dedektif odaya girdiğinde">
+                  </div>
+                  <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group" style="flex: 1;">
+                      <label style="font-weight: 600;">Kelime Uzunluğu</label>
+                      <input type="number" id="markov-gen-length" class="form-control" value="25" min="5" max="100">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                      <label style="font-weight: 600;">Sıcaklık (Temperature)</label>
+                      <input type="range" id="markov-gen-temp" min="0.1" max="1.5" step="0.1" value="0.7" oninput="document.getElementById('temp-val').textContent = this.value">
+                      <span style="font-size: 0.8rem; color: var(--text-muted);">Sıcaklık: <strong id="temp-val">0.7</strong></span>
+                    </div>
+                  </div>
+                  <button class="btn-primary" style="width: 100%; margin-bottom: 1rem;" onclick="app.generateMarkovSandboxText()">
+                    ✨ Yazar Üslubuyla Metin Oluştur
+                  </button>
+
+                  <div class="markov-output-box">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-secondary); margin-bottom: 0.5rem; text-transform: uppercase;">Üretilen Metin (Yazar Karakteri Korundu):</div>
+                    <p id="markov-gen-output" style="font-family: var(--font-editor); font-size: 1.05rem; line-height: 1.6; color: var(--text-primary); margin: 0;">
+                      Henüz metin üretilmedi. "Yazar Üslubuyla Metin Oluştur" butonuna basarak deneyin.
+                    </p>
+                    <div style="margin-top: 1.2rem; text-align: right;">
+                      <button class="tool-btn" onclick="app.copyMarkovOutputToEditor()">📝 Aktif Editöre Kopyala</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Future AI & RAG Integration Blueprint Card -->
+                <div class="profile-card" style="margin-top: 1.5rem; background: linear-gradient(135deg, rgba(27, 67, 50, 0.05), rgba(64, 145, 108, 0.08)); border: 1px solid var(--border-hover);">
+                  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <span style="font-size: 1.3rem;">🤖</span>
+                    <h3 style="font-family: var(--font-heading); margin: 0;">AI & RAG Katmanı Mimari Hazırlığı</h3>
+                  </div>
+                  <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+                    Bu Markov Karar Ağacı katmanı, gelecekte eklenecek LLM ve RAG (Retrieval-Augmented Generation) vektör veri tabanlarında yazar üslubu önceliği (Author Persona Prior) rolü üstlenir.
+                  </p>
+
+                  <div class="rag-pipeline-preview">
+                    <div class="pipeline-step">
+                      <span class="step-num">1</span>
+                      <span class="step-label">Yazar Metin Verisi</span>
+                    </div>
+                    <div class="pipeline-arrow">➔</div>
+                    <div class="pipeline-step active-step">
+                      <span class="step-num">2</span>
+                      <span class="step-label">Markov Tree (Üslup Filtresi)</span>
+                    </div>
+                    <div class="pipeline-arrow">➔</div>
+                    <div class="pipeline-step">
+                      <span class="step-num">3</span>
+                      <span class="step-label">RAG Vektör Arama & AI</span>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; background: rgba(255,255,255,0.4); padding: 0.75rem; border-radius: var(--radius-sm);">
+                    <span style="font-size: 0.85rem; font-weight: 600;">Hibrit Yazar Karakter Koruma Modu</span>
+                    <label class="switch-toggle">
+                      <input type="checkbox" checked id="rag-hybrid-toggle" onchange="app.toggleRagHybridMode(this)">
+                      <span class="slider-round"></span>
+                    </label>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           </div>
 
