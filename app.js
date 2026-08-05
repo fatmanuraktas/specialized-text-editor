@@ -1,279 +1,6 @@
 /* ==========================================================================
-   MARKOV DECISION TREE & AUTHOR PERSONA ENGINE (CLIENT-SIDE ML MODEL)
+   TEXTINATION WEB APPLICATION SCRIPT
    ========================================================================== */
-
-class MarkovDecisionTree {
-  constructor(order = 3) {
-    this.order = order;
-    this.unigrams = new Map();
-    this.totalWords = 0;
-    this.decisionTree = new Map();
-    this.contextCounts = new Map();
-  }
-
-  cleanText(text) {
-    if (!text) return [];
-    const cleaned = text
-      .toLowerCase()
-      .replace(/[\r\n\t]/g, ' ')
-      .replace(/[^\w\sçğıöşüİ1-9.,!?-]/g, '');
-    return cleaned.split(/\s+/).filter(Boolean);
-  }
-
-  getMarkovRatios() {
-    const N = this.totalWords || 0;
-    let corpusWeight, randomWeight;
-
-    if (N < 500) {
-      // 500 kelimeden az: %10 Corpus, %90 Random/Keşif
-      const progress = Math.max(0, N) / 500;
-      corpusWeight = 0.05 + progress * 0.10;
-      randomWeight = 1.0 - corpusWeight;
-    } else if (N < 5000) {
-      // 500 - 5000 kelime arası: %15 -> %40 Corpus, %85 -> %60 Random (Random ağırlıklı)
-      const progress = (N - 500) / (5000 - 500);
-      corpusWeight = 0.15 + progress * 0.25;
-      randomWeight = 1.0 - corpusWeight;
-    } else if (N < 15000) {
-      // 5000 - 15000 kelime arası: %40 -> %85 Corpus
-      const progress = (N - 5000) / (15000 - 5000);
-      corpusWeight = 0.40 + progress * 0.45;
-      randomWeight = 1.0 - corpusWeight;
-    } else {
-      // 15000+ kelime: %90 Corpus Ağırlıklı, %10 Random
-      corpusWeight = 0.90;
-      randomWeight = 0.10;
-    }
-
-    return {
-      totalWords: N,
-      corpusWeight: Number(corpusWeight.toFixed(4)),
-      randomWeight: Number(randomWeight.toFixed(4)),
-      corpusPct: Math.round(corpusWeight * 100),
-      randomPct: Math.round(randomWeight * 100)
-    };
-  }
-
-  trainCorpus(textList) {
-    this.unigrams.clear();
-    this.decisionTree.clear();
-    this.contextCounts.clear();
-    this.totalWords = 0;
-
-    const list = Array.isArray(textList) ? textList : [textList];
-    const fullCorpus = list.filter(Boolean).join(' ');
-    const tokens = this.cleanText(fullCorpus);
-    this.totalWords = tokens.length;
-
-    // Storage Complexity Bounds (Bellek Yönetimi & Karmaşıklık Sınırı)
-    const MAX_BRANCH_SIZE = 15;
-    const MAX_CONTEXT_NODES = 12000;
-
-    for (let i = 0; i < tokens.length; i++) {
-      const token = tokens[i];
-      this.unigrams.set(token, (this.unigrams.get(token) || 0) + 1);
-
-      for (let order = 1; order <= this.order; order++) {
-        if (i - order >= 0) {
-          const contextKey = tokens.slice(i - order, i).join(' ');
-
-          if (!this.decisionTree.has(contextKey)) {
-            if (this.decisionTree.size >= MAX_CONTEXT_NODES) continue;
-            this.decisionTree.set(contextKey, new Map());
-          }
-          const branchMap = this.decisionTree.get(contextKey);
-          branchMap.set(token, (branchMap.get(token) || 0) + 1);
-
-          if (branchMap.size > MAX_BRANCH_SIZE + 5) {
-            const sorted = Array.from(branchMap.entries()).sort((a, b) => b[1] - a[1]);
-            branchMap.clear();
-            for (let b = 0; b < MAX_BRANCH_SIZE; b++) {
-              if (sorted[b]) branchMap.set(sorted[b][0], sorted[b][1]);
-            }
-          }
-
-          this.contextCounts.set(contextKey, (this.contextCounts.get(contextKey) || 0) + 1);
-        }
-      }
-    }
-  }
-
-  isDuplicateOrExisting(contextStr, candidateWord, docText) {
-    if (!candidateWord || !docText) return false;
-    const wordLower = candidateWord.toLowerCase().trim();
-    const docLower = docText.toLowerCase();
-
-    const contextWords = (contextStr || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
-    const phrase = (contextWords.join(' ') + ' ' + wordLower).trim();
-
-    if (phrase.split(/\s+/).length >= 2) {
-      if (docLower.includes(phrase)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  predictNextWords(contextText, topK = 5, docText = '') {
-    const tokens = this.cleanText(contextText);
-    const ratios = this.getMarkovRatios();
-
-    const isRandomRoll = Math.random() < ratios.randomWeight;
-
-    if (tokens.length > 0 && !isRandomRoll) {
-      for (let o = Math.min(this.order, tokens.length); o > 0; o--) {
-        const contextKey = tokens.slice(tokens.length - o).join(' ');
-        if (this.decisionTree.has(contextKey)) {
-          const nextCounts = this.decisionTree.get(contextKey);
-          const totalCtx = this.contextCounts.get(contextKey) || 1;
-
-          const sorted = Array.from(nextCounts.entries())
-            .sort((a, b) => b[1] - a[1]);
-
-          const candidates = sorted
-            .map(([word, count]) => ({
-              word,
-              count,
-              prob: Number((count / totalCtx).toFixed(4)),
-              depth: o,
-              context: contextKey,
-              ratios: ratios
-            }))
-            .filter(c => !this.isDuplicateOrExisting(contextKey, c.word, docText));
-
-          if (candidates.length > 0) {
-            return candidates.slice(0, topK);
-          }
-        }
-      }
-    }
-
-    return this._getTopUnigrams(topK, ratios);
-  }
-
-  _getTopUnigrams(topK = 5, ratios = null) {
-    if (this.totalWords === 0) return [];
-    if (!ratios) ratios = this.getMarkovRatios();
-
-    let sorted = Array.from(this.unigrams.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, topK * 2);
-
-    if (ratios.randomWeight > 0.5 && sorted.length > 1) {
-      sorted.sort(() => Math.random() - 0.5);
-    }
-
-    return sorted.slice(0, topK).map(([word, count]) => ({
-      word,
-      count,
-      prob: Number((count / this.totalWords).toFixed(4)),
-      depth: 0,
-      context: '',
-      ratios: ratios
-    }));
-  }
-
-  generateText(seedPhrase, maxWords = 25, temperature = 0.7, docText = '') {
-    let tokens = this.cleanText(seedPhrase);
-    if (tokens.length === 0) tokens = ["gecenin"];
-    const generated = [...tokens];
-
-    for (let i = 0; i < maxWords; i++) {
-      const contextStr = generated.join(' ');
-      const candidates = this.predictNextWords(contextStr, 8, docText || seedPhrase);
-      if (candidates.length === 0) break;
-
-      let chosenWord;
-      if (temperature <= 0.1) {
-        chosenWord = candidates[0].word;
-      } else {
-        const probs = candidates.map(c => Math.pow(c.prob, 1.0 / temperature));
-        const sumP = probs.reduce((a, b) => a + b, 0);
-        if (sumP <= 0) {
-          chosenWord = candidates[0].word;
-        } else {
-          const normProbs = probs.map(p => p / sumP);
-          const r = Math.random();
-          let acc = 0;
-          chosenWord = candidates[0].word;
-          for (let idx = 0; idx < normProbs.length; idx++) {
-            acc += normProbs[idx];
-            if (r <= acc) {
-              chosenWord = candidates[idx].word;
-              break;
-            }
-          }
-        }
-      }
-      generated.push(chosenWord);
-    }
-    return generated.join(' ');
-  }
-
-  getTreeBranches(seedPhrase) {
-    const tokens = this.cleanText(seedPhrase);
-    if (tokens.length === 0) {
-      return { matched: false, candidates: [], total_transitions: 0 };
-    }
-
-    const contextKey = tokens.slice(-Math.min(this.order, tokens.length)).join(' ');
-    if (this.decisionTree.has(contextKey)) {
-      const nextCounts = this.decisionTree.get(contextKey);
-      const totalCtx = this.contextCounts.get(contextKey) || 1;
-      const sorted = Array.from(nextCounts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8);
-
-      const candidates = sorted.map(([w, c]) => ({
-        word: w,
-        count: c,
-        prob: Number((c / totalCtx).toFixed(2))
-      }));
-
-      return {
-        matched: true,
-        context: contextKey,
-        total_transitions: totalCtx,
-        candidates,
-        ratios: this.getMarkovRatios()
-      };
-    }
-
-    return { matched: false, candidates: [], total_transitions: 0 };
-  }
-
-  getAuthorMetrics() {
-    const vocabSize = this.unigrams.size;
-    const ttr = this.totalWords ? Number(((vocabSize / this.totalWords) * 100).toFixed(1)) : 0;
-    const sortedWords = Array.from(this.unigrams.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([w]) => w);
-
-    return {
-      total_words: this.totalWords,
-      vocab_size: vocabSize,
-      ttr: ttr,
-      order: this.order,
-      ratios: this.getMarkovRatios(),
-      top_words: sortedWords
-    };
-  }
-}
-
-class AuthorPersonaAIEngine {
-  constructor(markovModel) {
-    this.markovModel = markovModel;
-  }
-
-  generateSuggestion(context, options = {}) {
-    if (!this.markovModel) return "";
-    return this.markovModel.generateText(context, options.maxWords || 15, options.temperature || 0.7);
-  }
-}
-
-window.MarkovDecisionTree = MarkovDecisionTree;
-window.AuthorPersonaAIEngine = AuthorPersonaAIEngine;
 
 class ImagefictionApp {
   constructor() {
@@ -281,11 +8,7 @@ class ImagefictionApp {
     this.currentBookTab = 'editor';
     this.serverOffline = false;
 
-    // Markov ML Model & Persona Layer
-    this.markovModel = new MarkovDecisionTree(3);
-    this.aiEngine = new AuthorPersonaAIEngine(this.markovModel);
-    this.customCorpusText = '';
-    this.ragHybridMode = true;
+
 
     // Corkboard Node Dragging State
     this.draggedNode = null;
@@ -389,9 +112,7 @@ class ImagefictionApp {
         this.bookPersons = parsed.bookPersons;
         this.bookRelations = parsed.bookRelations;
         this.isDarkMode = parsed.isDarkMode || false;
-        this.customCorpusText = parsed.customCorpusText || '';
-        this.ragHybridMode = parsed.ragHybridMode !== undefined ? parsed.ragHybridMode : true;
-        this.rebuildAuthorMarkovModel();
+
         return;
       } catch (e) {
         console.error("State parse error", e);
@@ -399,8 +120,6 @@ class ImagefictionApp {
     }
 
     this.isDarkMode = false;
-    this.customCorpusText = '';
-    this.ragHybridMode = true;
     this.userProfile = {
       name: "Antigravity Yazar",
       email: "yazar@imagefiction.com",
@@ -447,7 +166,6 @@ class ImagefictionApp {
       { id: "r7", from_id: "p5", to_id: "p7", type: "Aşk", book_title: "Sisli Şehir" }
     ];
 
-    this.rebuildAuthorMarkovModel();
     this.saveState();
   }
 
@@ -532,8 +250,7 @@ class ImagefictionApp {
       'Yazma': 'view-books',
       'İlişki Haritası': 'view-books',
       'Karakterler': 'view-templates',
-      'Profil': 'view-profile',
-      'Yazar Stil & Markov': 'view-markov'
+      'Profil': 'view-profile'
     };
 
     Object.values(viewMap).forEach(id => {
@@ -563,7 +280,6 @@ class ImagefictionApp {
     }
     if (segmentName === 'Karakterler') this.renderTemplatesGrid();
     if (segmentName === 'Profil') this.renderProfileView();
-    if (segmentName === 'Yazar Stil & Markov') this.renderMarkovView();
   }
 
   /* ------------------------------------------------------------------------
@@ -893,51 +609,7 @@ class ImagefictionApp {
     }
   }
 
-  async triggerInlineMarkovPrediction() {
-    const activeEl = document.activeElement;
-    if (!activeEl || !activeEl.classList.contains('paper-sheet-content')) return;
-    if (document.getElementById('editor-ghost-text')) return;
 
-    const fullDocText = this.getPureEditorText();
-    if (!fullDocText || fullDocText.trim().length < 3) return;
-
-    const words = fullDocText.trim().split(/\s+/);
-    const context = words.slice(Math.max(0, words.length - 3)).join(" ");
-
-    let predictionText = "";
-    try {
-      const res = await fetch('/api/markov/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context: context, top_k: 5 })
-      });
-      const data = await res.json();
-      const candidates = data.candidates || [];
-      
-      // Filter out duplicate sentences/phrases already present in document
-      const novelCandidates = candidates.filter(c => 
-        !this.markovModel.isDuplicateOrExisting(context, c.word, fullDocText)
-      );
-
-      if (novelCandidates.length > 0) {
-        predictionText = novelCandidates[0].word;
-      }
-    } catch (e) {
-      if (this.markovModel) {
-        const candidates = this.markovModel.predictNextWords(context, 5, fullDocText);
-        if (candidates && candidates.length > 0) {
-          predictionText = candidates[0].word;
-        }
-      }
-    }
-
-    predictionText = (predictionText || "").trim();
-    if (!predictionText) return;
-
-    if (document.activeElement === activeEl && !document.getElementById('editor-ghost-text')) {
-      this.showGhostSuggestion(predictionText);
-    }
-  }
 
   handlePageOverflow() {
     const container = document.getElementById('editor-pages-container');
@@ -1026,16 +698,7 @@ class ImagefictionApp {
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
       this.saveCurrentBookText();
-      this.rebuildAuthorMarkovModel();
     }, 1000);
-
-    // Klavye/Düşünme Süresi: Yazar 800ms duraklayınca silik tahmin gösterilir
-    clearTimeout(this.thinkingTimer);
-    if (text.trim().length > 3) {
-      this.thinkingTimer = setTimeout(() => {
-        this.triggerInlineMarkovPrediction();
-      }, 800);
-    }
   }
 
   saveCurrentBookText() {
@@ -1522,330 +1185,7 @@ class ImagefictionApp {
     }, 3000);
   }
 
-  /* ------------------------------------------------------------------------
-     9. PYTHON MARKOV DECISION TREE & AUTHOR PERSONA ENGINE METHODS
-     ------------------------------------------------------------------------ */
-  async rebuildAuthorMarkovModel() {
-    const sources = [];
-    if (this.savedBooks) {
-      this.savedBooks.forEach(b => {
-        if (b.content) sources.push(b.content);
-        if (b.subject) sources.push(b.subject);
-      });
-    }
-    if (this.bookPersons) {
-      this.bookPersons.forEach(p => {
-        if (p.bio) sources.push(p.bio);
-      });
-    }
-    if (this.customCorpusText) {
-      sources.push(this.customCorpusText);
-    }
 
-    if (sources.length === 0) {
-      sources.push(
-        "Gecenin karanlığı şehri kapladığında, eski saatin tiktakları yankılanıyordu. Dedektif Ahmet Yılmaz, masasının üzerindeki sararmış dosyaları karıştırırken sokaktan gelen hafif adımları duydu. Her şey o gizemli saatin durduğu an başlamıştı...",
-        "Kasabaya ilk kar düşüp yoğun bir sis kapladığında, herkes kütüphanenin ışıklarının ansızın söndüğünü fark etti. Doktor Canan Şahin, elindeki fenerle kütüphaneye doğru adımlarken sisin arasından fısıltılar yükseliyordu..."
-      );
-    }
-
-    if (this.markovModel) {
-      this.markovModel.trainCorpus(sources);
-    }
-
-    if (!this.isServerAvailable()) return;
-
-    try {
-      await fetch('/api/markov/train', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ texts: sources })
-      });
-    } catch (e) {
-      this.serverOffline = true;
-    }
-  }
-
-  async updateEditorMarkovChips() {
-    const editor = document.getElementById('rich-editor-content');
-    const container = document.getElementById('markov-suggestion-chips');
-    if (!editor || !container) return;
-
-    const fullText = editor.innerText || '';
-    const words = fullText.trim().split(/\s+/);
-    const context = words.slice(Math.max(0, words.length - 3)).join(" ");
-
-    let suggestions = [];
-    if (this.isServerAvailable()) {
-      try {
-        const res = await fetch('/api/markov/predict', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ context: context, top_k: 4 })
-        });
-        const data = await res.json();
-        suggestions = data.candidates || [];
-      } catch (e) {
-        this.serverOffline = true;
-      }
-    }
-
-    if (suggestions.length === 0 && this.markovModel) {
-      suggestions = this.markovModel.predictNextWords(context, 4);
-    }
-
-    if (!suggestions || suggestions.length === 0) {
-      container.innerHTML = `<span class="markov-chip-empty">Kelime yazıldıkça Markov modeli yazar karakterine uygun tahmin sunar...</span>`;
-      return;
-    }
-
-    container.innerHTML = suggestions.map(s => {
-      const pct = Math.round(s.prob * 100);
-      return `<span class="markov-chip" onclick="app.insertMarkovSuggestion('${this.escapeQuotes(s.word)}')">
-        <span>${this.escapeHtml(s.word)}</span>
-        <span class="markov-chip-prob">%${pct}</span>
-      </span>`;
-    }).join("");
-  }
-
-  insertMarkovSuggestion(word) {
-    this.playPopSound();
-    const editor = document.getElementById('rich-editor-content');
-    if (!editor) return;
-
-    const text = editor.innerText.trimEnd();
-    editor.innerText = text ? text + " " + word + " " : word + " ";
-
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-
-    this.onEditorInput();
-  }
-
-  async completeSentenceWithMarkov() {
-    this.playPopSound();
-    const editor = document.getElementById('rich-editor-content');
-    if (!editor) return;
-
-    const currentText = editor.innerText || "";
-    let generatedFull = "";
-    if (this.isServerAvailable()) {
-      try {
-        const res = await fetch('/api/markov/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seed: currentText, max_words: 12, temperature: 0.7 })
-        });
-        const data = await res.json();
-        generatedFull = data.generated_text || "";
-      } catch (e) {
-        this.serverOffline = true;
-      }
-    }
-
-    if (!generatedFull && this.markovModel) {
-      generatedFull = this.markovModel.generateText(currentText, 12, 0.7, currentText);
-    }
-
-    const currentClean = currentText.toLowerCase().trim().split(/\s+/);
-    const genClean = generatedFull.split(/\s+/);
-    const newWords = genClean.slice(currentClean.length).join(" ");
-
-    if (newWords) {
-      editor.innerText = currentText.trimEnd() + " " + newWords + " ";
-      this.onEditorInput();
-      this.showToast("✨ Markov Engine ile cümle tamamlandı!");
-    } else {
-      this.showToast("Tahmin için daha fazla metin yazın.");
-    }
-  }
-
-  async renderMarkovView() {
-    await this.rebuildAuthorMarkovModel();
-
-    let metrics = null;
-    if (this.isServerAvailable()) {
-      try {
-        const res = await fetch('/api/markov/metrics');
-        metrics = await res.json();
-      } catch (e) {
-        this.serverOffline = true;
-      }
-    }
-
-    if (!metrics && this.markovModel) {
-      metrics = this.markovModel.getAuthorMetrics();
-    }
-
-    if (metrics) {
-      const elWords = document.getElementById('markov-stat-words');
-      const elVocab = document.getElementById('markov-stat-vocab');
-      const elTtr = document.getElementById('markov-stat-ttr');
-      const elDepth = document.getElementById('markov-stat-depth');
-
-      if (elWords) elWords.textContent = (metrics.total_words || 0).toLocaleString();
-      if (elVocab) elVocab.textContent = (metrics.vocab_size || 0).toLocaleString();
-      if (elTtr) elTtr.textContent = `%${metrics.ttr || 0.0}`;
-      if (elDepth) elDepth.textContent = `${metrics.order || 3}-Gram Trie`;
-    }
-
-    const corpusTextarea = document.getElementById('markov-custom-corpus-text');
-    if (corpusTextarea && this.customCorpusText) {
-      corpusTextarea.value = this.customCorpusText;
-    }
-
-    const toggle = document.getElementById('rag-hybrid-toggle');
-    if (toggle) toggle.checked = this.ragHybridMode;
-
-    this.inspectMarkovTree();
-  }
-
-  async inspectMarkovTree() {
-    const input = document.getElementById('markov-seed-input');
-    const container = document.getElementById('markov-tree-visualizer-container');
-    if (!input || !container) return;
-
-    const seed = input.value || "gecenin";
-    let data = null;
-    if (this.isServerAvailable()) {
-      try {
-        const res = await fetch('/api/markov/tree', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seed: seed })
-        });
-        data = await res.json();
-      } catch (e) {
-        this.serverOffline = true;
-      }
-    }
-
-    if (!data && this.markovModel) {
-      data = this.markovModel.getTreeBranches(seed);
-    }
-
-    if (!data || !data.matched || !data.candidates || data.candidates.length === 0) {
-      container.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-muted);">
-        '${this.escapeHtml(seed)}' ifadesi için karar ağacında henüz dallanma verisi oluşmadı.<br>Eğitilecek metin ekleyerek Markov modelini zenginleştirin.
-      </div>`;
-      return;
-    }
-
-    let html = `<div class="tree-node-group">`;
-    html += `<div class="tree-node-context">
-      <span>🌳 Markov Bağlam Düğümü: "${this.escapeHtml(data.context)}"</span>
-      <span style="font-size:0.78rem; font-weight:normal; color:var(--text-secondary); margin-left:auto;">(${data.total_transitions} Eğitilmiş Geçiş)</span>
-    </div>`;
-
-    html += `<div class="tree-branches-list">`;
-    data.candidates.forEach(cand => {
-      const pct = Math.round(cand.prob * 100);
-      html += `<div class="tree-branch-card">
-        <span class="tree-branch-word">↳ ${this.escapeHtml(cand.word)}</span>
-        <div class="tree-branch-bar" style="width: ${Math.max(12, pct * 1.5)}px;"></div>
-        <span class="tree-branch-pct">%${pct}</span>
-        <span style="font-size: 0.72rem; color: var(--text-muted);">(${cand.count}x)</span>
-      </div>`;
-    });
-    html += `</div></div>`;
-
-    container.innerHTML = html;
-  }
-
-  async trainCustomCorpus() {
-    this.playPopSound();
-    const textarea = document.getElementById('markov-custom-corpus-text');
-    if (!textarea) return;
-
-    const text = textarea.value.trim();
-    if (!text) {
-      this.showToast("Lütfen eğitilecek bir metin girin.");
-      return;
-    }
-
-    this.customCorpusText = text;
-    this.saveState();
-    await this.renderMarkovView();
-    this.showToast("🧠 Markov modeli ek yazar verileriyle eğitildi!");
-  }
-
-  handleCorpusFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target.result;
-      const textarea = document.getElementById('markov-custom-corpus-text');
-      if (textarea) {
-        textarea.value = (textarea.value ? textarea.value + "\n\n" : "") + content;
-      }
-      this.trainCustomCorpus();
-    };
-    reader.readAsText(file);
-  }
-
-  async generateMarkovSandboxText() {
-    this.playPopSound();
-    const seedInput = document.getElementById('markov-gen-seed');
-    const lengthInput = document.getElementById('markov-gen-length');
-    const tempInput = document.getElementById('markov-gen-temp');
-    const outputEl = document.getElementById('markov-gen-output');
-
-    if (!outputEl) return;
-
-    const seed = seedInput ? seedInput.value : "Dedektif";
-    const length = lengthInput ? parseInt(lengthInput.value, 10) : 25;
-    const temp = tempInput ? parseFloat(tempInput.value) : 0.7;
-
-    let generatedText = "";
-    if (this.isServerAvailable()) {
-      try {
-        const res = await fetch('/api/markov/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ seed: seed, max_words: length, temperature: temp })
-        });
-        const data = await res.json();
-        generatedText = data.generated_text || "";
-      } catch (e) {
-        this.serverOffline = true;
-      }
-    }
-
-    if (!generatedText && this.markovModel) {
-      generatedText = this.markovModel.generateText(seed, length, temp, seed);
-    }
-
-    outputEl.textContent = generatedText || "Metin üretilemedi.";
-    this.showToast("✨ Markov Engine ile yeni metin oluşturuldu!");
-  }
-
-  copyMarkovOutputToEditor() {
-    this.playPopSound();
-    const outputEl = document.getElementById('markov-gen-output');
-    if (!outputEl || !outputEl.textContent) return;
-
-    const text = outputEl.textContent;
-    if (text.includes("Henüz metin üretilmedi")) return;
-
-    const editor = document.getElementById('rich-editor-content');
-    if (editor) {
-      editor.innerText = (editor.innerText.trim() ? editor.innerText.trim() + "\n\n" : "") + text;
-      this.onEditorInput();
-      this.showToast("📝 Üretilen metin yazım editörüne eklendi.");
-    }
-  }
-
-  toggleRagHybridMode(checkbox) {
-    this.ragHybridMode = checkbox.checked;
-    this.saveState();
-    this.showToast(this.ragHybridMode ? "🤖 Hibrit Yazar Karakter & RAG Modu Aktif" : "Hibrit Mod Devre Dışı");
-  }
 
   escapeHtml(str) {
     if (!str) return '';
