@@ -113,6 +113,18 @@ class ImagefictionApp {
         this.bookRelations = parsed.bookRelations;
         this.isDarkMode = parsed.isDarkMode || false;
 
+        // Strip any external Unsplash image URLs from savedBooks in user's localStorage
+        if (Array.isArray(this.savedBooks)) {
+          let stateUpdated = false;
+          this.savedBooks.forEach(b => {
+            if (b.cover && (b.cover.includes('unsplash.com') || b.cover.startsWith('http'))) {
+              b.cover = "";
+              stateUpdated = true;
+            }
+          });
+          if (stateUpdated) this.saveState();
+        }
+
         return;
       } catch (e) {
         console.error("State parse error", e);
@@ -121,9 +133,9 @@ class ImagefictionApp {
 
     this.isDarkMode = false;
     this.userProfile = {
-      name: "Antigravity Yazar",
+      name: "Yazar",
       email: "yazar@imagefiction.com",
-      bio: "Imagefiction platformunda hikayeler ve polisiye vakalar kurgulayan tutkulu yazar.",
+      bio: "Imagefiction platformunda hikayeler kurgulayan ve karakter ilişkilerini haritalandıran tutkulu yazar.",
       avatarPath: ""
     };
 
@@ -131,15 +143,15 @@ class ImagefictionApp {
       {
         title: "Zamanın Ötesinde",
         subject: "Gelecek ile geçmiş arasında sıkışan bir dedektifin öyküsü.",
-        cover: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop",
-        author: "Antigravity Yazar",
+        cover: "",
+        author: "Yazar",
         content: "Gecenin karanlığı şehri kapladığında, eski saatin tiktakları yankılanıyordu. Dedektif Ahmet Yılmaz, masasının üzerindeki sararmış dosyaları karıştırırken sokaktan gelen hafif adımları duydu. Her şey o gizemli saatin durduğu an başlamıştı..."
       },
       {
         title: "Sisli Şehir",
-        subject: "Gizemli olayların yaşandığı kasabada geçen polisiye macera.",
-        cover: "https://images.unsplash.com/photo-1485871981521-5b1017957861?q=80&w=800&auto=format&fit=crop",
-        author: "Antigravity Yazar",
+        subject: "Gizemli olayların yaşandığı kasabada geçen bir macera.",
+        cover: "",
+        author: "Yazar",
         content: "Kasabaya ilk kar düşüp yoğun bir sis kapladığında, herkes kütüphanenin ışıklarının ansızın söndüğünü fark etti. Doktor Canan Şahin, elindeki fenerle kütüphaneye doğru adımlarken sisin arasından fısıltılar yükseliyordu..."
       }
     ];
@@ -246,7 +258,6 @@ class ImagefictionApp {
 
     const viewMap = {
       'Kitaplarım': 'view-books',
-      'İlişki Panosu': 'view-books',
       'Yazma': 'view-books',
       'İlişki Haritası': 'view-books',
       'Karakterler': 'view-templates',
@@ -258,11 +269,12 @@ class ImagefictionApp {
       if (el) el.style.display = 'none';
     });
 
-    if (['Polisiye Pano', 'Yazma', 'İlişki Haritası'].includes(segmentName)) {
+    if (['Yazma'].includes(segmentName)) {
       if (this.savedBooks.length > 0) {
-        const defaultBook = this.savedBooks[0];
-        const tabMap = { 'Yazma': 'editor', 'Polisiye Pano': 'corkboard', 'İlişki Haritası': 'relations' };
-        this.openBookWorkspace(defaultBook.title, tabMap[segmentName]);
+        const bookToOpen = (this.currentBookTitle && this.savedBooks.some(b => b.title === this.currentBookTitle))
+          ? this.currentBookTitle
+          : this.savedBooks[0].title;
+        this.openBookWorkspace(bookToOpen, 'editor');
         return;
       }
     }
@@ -275,10 +287,9 @@ class ImagefictionApp {
   }
 
   renderCurrentView(segmentName = 'Kitaplarım') {
-    if (['Kitaplarım', 'Polisiye Pano', 'Yazma', 'İlişki Haritası'].includes(segmentName)) {
+    if (['Kitaplarım', 'Yazma'].includes(segmentName)) {
       this.renderBooksGrid();
     }
-    if (segmentName === 'Karakterler') this.renderTemplatesGrid();
     if (segmentName === 'Profil') this.renderProfileView();
   }
 
@@ -296,10 +307,20 @@ class ImagefictionApp {
       </div>
     `;
 
-    this.savedBooks.forEach(book => {
-      const coverBg = book.cover 
+    const defaultGradients = [
+      'linear-gradient(135deg, #1b4332, #40916c)',
+      'linear-gradient(135deg, #2b2d42, #4a4e69)',
+      'linear-gradient(135deg, #5c2018, #9e2a2b)',
+      'linear-gradient(135deg, #2c3e50, #34495e)',
+      'linear-gradient(135deg, #3d2b1f, #8c6d58)'
+    ];
+
+    this.savedBooks.forEach((book, idx) => {
+      const isExternalUrl = book.cover && (book.cover.startsWith('http') || book.cover.includes('unsplash.com'));
+      const grad = defaultGradients[idx % defaultGradients.length];
+      const coverBg = (book.cover && !isExternalUrl)
         ? `background-image: url('${book.cover}')`
-        : `background: linear-gradient(135deg, #1b4332, #40916c)`;
+        : `background: ${grad}`;
 
       html += `
         <div class="book-card">
@@ -312,7 +333,7 @@ class ImagefictionApp {
               <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
               <span>Düzenle</span>
             </button>
-            <button class="menu-item-btn" onclick="app.openBookWorkspaceDirect(event, '${this.escapeQuotes(book.title)}', 'corkboard')">
+            <button class="menu-item-btn" onclick="app.openBookWorkspaceDirect(event, '${this.escapeQuotes(book.title)}', 'relations')">
               <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/></svg>
               <span>İlişkiyi Görüntüle</span>
             </button>
@@ -402,7 +423,7 @@ class ImagefictionApp {
     }
 
     this.playPopSound();
-    const coverUrl = coverDataInput.value || "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop";
+    const coverUrl = coverDataInput.value || "";
 
     const newBook = {
       title: title,
@@ -459,7 +480,7 @@ class ImagefictionApp {
   }
 
   /* ------------------------------------------------------------------------
-     5. SINGLE BOOK WORKSPACE (YAZMA + POLİSİYE PANO)
+     5. SINGLE BOOK WORKSPACE (YAZMA + İLİŞKİ HARİTASI)
      ------------------------------------------------------------------------ */
   openBookWorkspace(bookTitle, targetTab = 'editor') {
     const book = this.savedBooks.find(b => b.title === bookTitle);
@@ -473,15 +494,49 @@ class ImagefictionApp {
 
     document.getElementById('current-page-title').textContent = `Kitap: ${bookTitle}`;
 
-    const editor = document.getElementById('rich-editor-content');
-    editor.innerText = book.content || '';
-    this.onEditorInput();
+    // Clean reset editor pages container to single page
+    const pagesContainer = document.getElementById('editor-pages-container');
+    if (pagesContainer) {
+      pagesContainer.innerHTML = `
+        <div class="paper-sheet" data-page="1">
+          <div class="paper-sheet-header">
+            <span>Sayfa 1</span>
+          </div>
+          <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true" data-page-index="0" oninput="app.onEditorInput()"></div>
+          <div class="paper-sheet-footer">
+            <span>Imagefiction Taslak</span>
+          </div>
+        </div>
+      `;
+    }
+
+    this.setEditorText(book.content || '');
 
     document.getElementById('setting-book-title').value = book.title;
     document.getElementById('setting-book-subject').value = book.subject || '';
     document.getElementById('setting-cover-data').value = book.cover || '';
 
     this.switchBookTab(targetTab);
+
+    if (targetTab === 'editor') {
+      this.onEditorInput();
+    }
+  }
+
+  setEditorText(text) {
+    const editor = document.getElementById('rich-editor-content');
+    if (!editor) return;
+    if (!text || !text.trim()) {
+      editor.innerHTML = '<p><br></p>';
+      return;
+    }
+
+    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+    if (paragraphs.length > 0) {
+      editor.innerHTML = paragraphs.map(p => `<p>${this.escapeHtml(p)}</p>`).join('');
+    } else {
+      editor.innerHTML = `<p>${this.escapeHtml(text)}</p>`;
+    }
   }
 
   closeBookWorkspace() {
@@ -497,6 +552,7 @@ class ImagefictionApp {
       'editor': 'subtab-editor',
       'corkboard': 'subtab-corkboard',
       'relations': 'subtab-corkboard',
+      'characters': 'subtab-characters',
       'settings': 'subtab-settings'
     };
 
@@ -512,17 +568,18 @@ class ImagefictionApp {
     }
 
     document.querySelectorAll('.book-tab-btn').forEach(btn => {
-      const text = btn.textContent.trim().toLowerCase();
+      const tabAttr = btn.getAttribute('data-tab');
       btn.classList.toggle('active', 
-        (tabName === 'editor' && text.includes('yazma')) ||
-        (tabName === 'corkboard' && text.includes('polisiye')) ||
-        (tabName === 'relations' && text.includes('ilişki')) ||
-        (tabName === 'settings' && text.includes('ayarlar'))
+        tabAttr === tabName || 
+        (tabName === 'corkboard' && tabAttr === 'relations')
       );
     });
 
     if (tabName === 'corkboard' || tabName === 'relations') {
       this.renderCorkboard();
+    }
+    if (tabName === 'characters') {
+      this.renderBookCharactersGrid();
     }
   }
 
@@ -613,18 +670,19 @@ class ImagefictionApp {
 
   handlePageOverflow() {
     const container = document.getElementById('editor-pages-container');
-    if (!container) return;
+    if (!container || container.offsetWidth === 0) return;
 
     const sheets = Array.from(container.querySelectorAll('.paper-sheet'));
-    const PAGE_MAX_HEIGHT = 820; // Printable height inside A4 sheet
 
     for (let i = 0; i < sheets.length; i++) {
       const sheet = sheets[i];
       const pageEl = sheet.querySelector('.paper-sheet-content');
       if (!pageEl) continue;
 
+      let loopGuard = 0;
       // When text height exceeds page boundary, overflow into next page sheet
-      while (pageEl.scrollHeight > PAGE_MAX_HEIGHT + 10) {
+      while (pageEl.scrollHeight > pageEl.clientHeight && pageEl.clientHeight > 0 && loopGuard < 40) {
+        loopGuard++;
         let nextSheet = sheets[i + 1];
         if (!nextSheet) {
           const newSheetNum = sheets.length + 1;
@@ -649,7 +707,7 @@ class ImagefictionApp {
 
         const nextPageEl = nextSheet.querySelector('.paper-sheet-content');
         const lastChild = pageEl.lastChild;
-        if (!lastChild) break;
+        if (!lastChild || pageEl.childNodes.length <= 1) break;
 
         if (lastChild.id === 'editor-ghost-text') {
           this.clearGhostSuggestion();
@@ -773,7 +831,7 @@ class ImagefictionApp {
   }
 
   /* ------------------------------------------------------------------------
-     6. POLİSİYE PANO (CANVAS PANNING & SCALE ZOOM SYSTEM)
+     6. İLİŞKİ HARİTASI (CANVAS PANNING & SCALE ZOOM SYSTEM)
      ------------------------------------------------------------------------ */
   renderCorkboard() {
     const nodesLayer = document.getElementById('corkboard-nodes-layer');
@@ -988,6 +1046,34 @@ class ImagefictionApp {
     container.innerHTML = html;
   }
 
+  renderBookCharactersGrid() {
+    const container = document.getElementById('book-characters-grid-container');
+    if (!container) return;
+
+    const persons = this.bookPersons.filter(p => p.book_title === this.currentBookTitle);
+    if (persons.length === 0) {
+      container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem; padding: 1rem;">Bu kitaba henüz karakter eklenmedi. Yukarıdaki "+ Yeni Karakter Ekle" butonuna tıklayarak ekleyebilirsiniz.</div>';
+      return;
+    }
+
+    let html = '';
+    persons.forEach(person => {
+      html += `
+        <div class="template-card" onclick="app.openDossierSheetModal('${person.id}')">
+          <span class="template-badge" style="background-color: ${person.color || '#1b4332'};">${this.escapeHtml(person.job || 'Kişi')}</span>
+          <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary);">${this.escapeHtml(person.name)}</h4>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">${this.escapeHtml(person.trait || '')}</p>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: auto; display: flex; justify-content: space-between;">
+            <span>${this.escapeHtml(person.gender || '')} • ${this.escapeHtml(person.age || '')}</span>
+            <span>Detayları Gör →</span>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
   openDossierSheetModal(personId) {
     this.playClickSound();
     const person = this.bookPersons.find(p => p.id === personId);
@@ -1005,7 +1091,7 @@ class ImagefictionApp {
   }
 
   openCreatePersonModal() {
-    document.getElementById('modal-person-title').textContent = 'Polisiye Panosuna Kişi Ekle';
+    document.getElementById('modal-person-title').textContent = 'İlişki Haritasına Kişi Ekle';
     document.getElementById('person-id').value = '';
     document.getElementById('person-name').value = '';
     document.getElementById('person-job-select').value = 'Dedektif';
@@ -1014,6 +1100,9 @@ class ImagefictionApp {
     document.getElementById('person-gender-select').value = 'Erkek';
     document.getElementById('person-color-select').value = '#1b4332';
     document.getElementById('person-bio').value = '';
+
+    const btnDelete = document.getElementById('btn-delete-person');
+    if (btnDelete) btnDelete.style.display = 'none';
 
     this.openModal('modal-person');
   }
@@ -1029,7 +1118,30 @@ class ImagefictionApp {
     document.getElementById('person-color-select').value = person.color || '#1b4332';
     document.getElementById('person-bio').value = person.bio || '';
 
+    const btnDelete = document.getElementById('btn-delete-person');
+    if (btnDelete) btnDelete.style.display = 'inline-block';
+
     this.openModal('modal-person');
+  }
+
+  deletePersonFromModal() {
+    const id = document.getElementById('person-id').value;
+    if (!id) return;
+
+    if (!confirm("Bu kişiyi ve ona bağlı tüm ilişkileri silmek istediğinize emin misiniz?")) return;
+
+    this.playPopSound();
+    this.bookPersons = this.bookPersons.filter(p => p.id !== id);
+    this.bookRelations = this.bookRelations.filter(r => r.from_id !== id && r.to_id !== id);
+
+    this.saveState();
+    this.closeModal('modal-person');
+
+    if (this.currentBookTab === 'corkboard' || this.currentBookTab === 'relations') {
+      this.renderCorkboard();
+    }
+    this.renderTemplatesGrid();
+    this.showToast("Kişi haritadan silindi.");
   }
 
   savePerson() {
@@ -1092,7 +1204,7 @@ class ImagefictionApp {
   openCreateRelationModal() {
     const persons = this.bookPersons.filter(p => p.book_title === this.currentBookTitle);
     if (persons.length < 2) {
-      this.showToast("İlişki kurabilmek için panoda en az 2 kişi bulunmalıdır.");
+      this.showToast("İlişki kurabilmek için haritada en az 2 kişi bulunmalıdır.");
       return;
     }
 
@@ -1102,7 +1214,45 @@ class ImagefictionApp {
     selectFrom.innerHTML = persons.map(p => `<option value="${p.id}">${this.escapeHtml(p.name)}</option>`).join('');
     selectTo.innerHTML = persons.map(p => `<option value="${p.id}">${this.escapeHtml(p.name)}</option>`).join('');
 
+    this.renderExistingRelationsList();
     this.openModal('modal-relation');
+  }
+
+  renderExistingRelationsList() {
+    const container = document.getElementById('existing-relations-list');
+    if (!container) return;
+
+    const relations = this.bookRelations.filter(r => r.book_title === this.currentBookTitle);
+    if (relations.length === 0) {
+      container.innerHTML = '<div style="font-size: 0.85rem; color: var(--text-muted); padding: 0.25rem;">Henüz tanımlı ilişki yok.</div>';
+      return;
+    }
+
+    let html = '';
+    relations.forEach(r => {
+      const fromP = this.bookPersons.find(p => p.id === r.from_id);
+      const toP = this.bookPersons.find(p => p.id === r.to_id);
+      const fromName = fromP ? fromP.name : 'Bilinmeyen';
+      const toName = toP ? toP.name : 'Bilinmeyen';
+
+      html += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; border-bottom: 1px dashed var(--border-color); font-size: 0.85rem;">
+          <span><strong>${this.escapeHtml(fromName)}</strong> ↔ <strong>${this.escapeHtml(toName)}</strong> (${this.escapeHtml(r.type)})</span>
+          <button style="background: none; border: none; color: #e63946; cursor: pointer; font-size: 0.8rem; font-weight: 600;" onclick="app.deleteRelation('${r.id}')">Sil</button>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  }
+
+  deleteRelation(id) {
+    this.playPopSound();
+    this.bookRelations = this.bookRelations.filter(r => r.id !== id);
+    this.saveState();
+    this.renderExistingRelationsList();
+    this.renderCorkboard();
+    this.showToast("İlişki silindi.");
   }
 
   saveRelation() {

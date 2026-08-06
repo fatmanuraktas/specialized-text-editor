@@ -1012,7 +1012,7 @@ body::before {
   line-height: 1.85;
   color: var(--papyrus-text, #1f2937);
   outline: none;
-  overflow: hidden;
+  overflow-y: auto;
   word-wrap: break-word;
   min-height: 820px;
 }
@@ -1050,7 +1050,7 @@ body::before {
 }
 
 /* ==========================================================================
-   POLİSİYE PANO & İLİŞKİ HARİTASI
+   İLİŞKİ HARİTASI
    ========================================================================== */
 .corkboard-container {
   width: 100%;

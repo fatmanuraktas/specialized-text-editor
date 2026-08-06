@@ -1,4 +1,4 @@
-# Textination - Web Yazar Editörü & Polisiye Şematik Pano
+# Textination - Web Yazar Editörü & İlişki Haritası
 
 **Textination**, yazarlar için tasarlanmış modern bir dijital yazarlık, karakter ilişki haritası ve kitap oluşturma platformudur. 
 
@@ -18,7 +18,7 @@ PyQt6 masaüstü uygulamasından tam donanımlı, responsive ve yüksek performa
    - Odaklanma Modu (Focus Mode) ile tam ekran, dikkat dağıtmayan yazım deneyimi.
    - Otomatik kaydetme (Auto-save) ve `.txt` olarak indirebilme.
 
-3. **📌 Polisiye Şematik Pano (Interactive Detective Corkboard):**
+3. **📌 İlişki Haritası (Interactive Relationship Canvas):**
    - Mantar pano tasarımı üzerinde sürüklenebilir karakter kartları (Pushpin 📌 ve renk simgeleri).
    - Karakterler arasında ilişki bağlama (Aile, Arkadaşlık, Aşk, Düşmanlık).
    - Gerçek zamanlı animated SVG bağlantı çizgileri ve etiketleri.

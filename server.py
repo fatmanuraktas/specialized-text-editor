@@ -23,6 +23,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+        if self.path.startswith('/api/log'):
+            return self._send_json({'status': 'ok'})
+
         req_path = self.translate_path(self.path)
         if not os.path.exists(req_path) and not '.' in os.path.basename(self.path):
             self.path = '/index.html'
