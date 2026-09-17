@@ -681,7 +681,7 @@ class ImagefictionApp {
 
       let loopGuard = 0;
       // When text height exceeds page boundary, overflow into next page sheet
-      while (pageEl.scrollHeight > pageEl.clientHeight && pageEl.clientHeight > 0 && loopGuard < 40) {
+      while (pageEl.scrollHeight > pageEl.clientHeight && pageEl.clientHeight > 0 && loopGuard < 200) {
         loopGuard++;
         let nextSheet = sheets[i + 1];
         if (!nextSheet) {
@@ -707,17 +707,63 @@ class ImagefictionApp {
 
         const nextPageEl = nextSheet.querySelector('.paper-sheet-content');
         const lastChild = pageEl.lastChild;
-        if (!lastChild || pageEl.childNodes.length <= 1) break;
+        if (!lastChild) break;
 
         if (lastChild.id === 'editor-ghost-text') {
           this.clearGhostSuggestion();
           continue;
         }
 
-        if (nextPageEl.firstChild) {
-          nextPageEl.insertBefore(lastChild, nextPageEl.firstChild);
+        if (lastChild.nodeType === Node.ELEMENT_NODE && lastChild.tagName === 'P' && lastChild.childNodes.length > 0) {
+            let nextP = nextPageEl.firstChild;
+            if (!nextP || nextP.tagName !== 'P' || !nextP.classList.contains('split-node')) {
+                nextP = document.createElement('p');
+                nextP.className = 'split-node';
+                if (nextPageEl.firstChild) {
+                    nextPageEl.insertBefore(nextP, nextPageEl.firstChild);
+                } else {
+                    nextPageEl.appendChild(nextP);
+                }
+            }
+
+            const nodeToMove = lastChild.lastChild;
+            if (nodeToMove) {
+                if (nodeToMove.nodeType === Node.TEXT_NODE) {
+                    let text = nodeToMove.textContent;
+                    let lastSpace = text.lastIndexOf(' ');
+                    if (lastSpace > 0) {
+                        nodeToMove.textContent = text.substring(0, lastSpace);
+                        let splitText = document.createTextNode(' ' + text.substring(lastSpace + 1));
+                        if (nextP.firstChild) {
+                            nextP.insertBefore(splitText, nextP.firstChild);
+                        } else {
+                            nextP.appendChild(splitText);
+                        }
+                    } else {
+                        if (nextP.firstChild) {
+                            nextP.insertBefore(nodeToMove, nextP.firstChild);
+                        } else {
+                            nextP.appendChild(nodeToMove);
+                        }
+                    }
+                } else {
+                    if (nextP.firstChild) {
+                        nextP.insertBefore(nodeToMove, nextP.firstChild);
+                    } else {
+                        nextP.appendChild(nodeToMove);
+                    }
+                }
+            }
+            
+            if (lastChild.childNodes.length === 0 || (lastChild.childNodes.length === 1 && lastChild.firstChild.nodeType === Node.TEXT_NODE && lastChild.firstChild.textContent === '')) {
+                lastChild.remove();
+            }
         } else {
-          nextPageEl.appendChild(lastChild);
+            if (nextPageEl.firstChild) {
+                nextPageEl.insertBefore(lastChild, nextPageEl.firstChild);
+            } else {
+                nextPageEl.appendChild(lastChild);
+            }
         }
       }
     }
@@ -742,7 +788,10 @@ class ImagefictionApp {
   onEditorInput() {
     this.clearGhostSuggestion();
 
-    this.handlePageOverflow();
+    if (this.overflowFrame) cancelAnimationFrame(this.overflowFrame);
+    this.overflowFrame = requestAnimationFrame(() => {
+      this.handlePageOverflow();
+    });
 
     const text = this.getPureEditorText();
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -1086,8 +1135,20 @@ class ImagefictionApp {
     document.getElementById('dossier-gender').textContent = person.gender || '-';
     document.getElementById('dossier-bio').textContent = person.bio || 'Biyografi bilgisi girilmemiş.';
     document.getElementById('dossier-book-tag').textContent = `Ait Olduğu Kitap: ${person.book_title}`;
+    document.getElementById('modal-dossier-sheet').dataset.personId = personId;
 
     this.openModal('modal-dossier-sheet');
+  }
+
+  editPersonFromDossier() {
+    const sheet = document.getElementById('modal-dossier-sheet');
+    const personId = sheet.dataset.personId;
+    if (!personId) return;
+    const person = this.bookPersons.find(p => p.id === personId);
+    if (person) {
+      this.closeModal('modal-dossier-sheet');
+      this.openEditPersonModal(person);
+    }
   }
 
   openCreatePersonModal() {
