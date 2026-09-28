@@ -107,8 +107,8 @@ body {
   background-color: var(--bg-main);
   color: var(--text-primary);
   line-height: 1.6;
-  overflow: hidden;
-  height: 100vh;
+  overflow-x: hidden;
+  min-height: 100vh;
   width: 100vw;
   user-select: none;
   -webkit-font-smoothing: antialiased;
@@ -127,7 +127,7 @@ body::before {
 
 #app {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
   position: relative;
   z-index: 1;
@@ -554,12 +554,11 @@ body::before {
   display: none;
 }
 
-/* Workspace Main */
 .workspace {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 0;
   background-color: var(--bg-main);
 }
 
@@ -573,6 +572,8 @@ body::before {
   justify-content: space-between;
   padding: 0 2rem;
   z-index: 10;
+  position: sticky;
+  top: 0;
 }
 
 .left-nav {
@@ -638,7 +639,6 @@ body::before {
 /* Content Area with side margins */
 .content-area {
   flex: 1;
-  overflow-y: auto;
   padding: 2.5rem 3rem;
   position: relative;
 }
@@ -855,7 +855,7 @@ body::before {
 .book-workspace {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: calc(100vh - 60px);
   margin: -2.5rem -3rem;
 }
 
@@ -910,7 +910,6 @@ body::before {
 
 .book-tab-content {
   flex: 1;
-  overflow: hidden;
   position: relative;
 }
 
@@ -958,7 +957,6 @@ body::before {
 
 .editor-body-wrapper {
   flex: 1;
-  overflow-y: auto;
   padding: 2.5rem 1rem;
   display: flex;
   justify-content: center;
@@ -978,7 +976,9 @@ body::before {
 .paper-sheet {
   width: 100%;
   max-width: 816px;
+  height: 1056px;
   min-height: 1056px;
+  max-height: 1056px;
   background-color: var(--papyrus-paper, #ffffff);
   border: 1px solid var(--papyrus-border, #d1d5db);
   border-radius: 4px;
@@ -988,6 +988,7 @@ body::before {
   position: relative;
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
 }
 
 .paper-sheet-header {
@@ -1005,16 +1006,18 @@ body::before {
 }
 
 .paper-sheet-content {
-  flex: 1;
+  /* 1056 - 44(header) - 40(footer) = 972px max */
+  height: 972px;
+  max-height: 972px;
   padding: 2rem 3.5rem;
   font-family: var(--font-editor, Georgia, serif);
   font-size: 1.15rem;
   line-height: 1.85;
   color: var(--papyrus-text, #1f2937);
   outline: none;
-  overflow-y: auto;
+  overflow: hidden;
   word-wrap: break-word;
-  min-height: 820px;
+  caret-color: transparent; /* Hide native caret, we use custom one */
 }
 
 .paper-sheet-footer {
@@ -1040,6 +1043,9 @@ body::before {
   padding: 0 2rem;
   font-size: 0.85rem;
   color: var(--text-secondary);
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
 }
 
 .editor-container.focus-mode {
@@ -1047,6 +1053,19 @@ body::before {
   inset: 0;
   z-index: 1000;
   background: var(--papyrus-bg);
+  overflow-y: auto;
+}
+
+/* Keep toolbar visible and sticky in focus mode */
+.editor-container.focus-mode .editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1010;
+  background: var(--bg-card);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
 }
 
 /* ==========================================================================
@@ -1054,7 +1073,8 @@ body::before {
    ========================================================================== */
 .corkboard-container {
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 114px);
+  min-height: 600px;
   position: relative;
   background-color: var(--corkboard-bg);
   background-image: var(--corkboard-pattern);
@@ -1549,4 +1569,263 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ==========================================================================
+   CUSTOM CARET / CURSOR
+   ========================================================================== */
+.editor-caret {
+  position: absolute;
+  width: 2.5px;
+  pointer-events: none;
+  z-index: 100;
+  display: none;
+  transition: left 0.05s ease, top 0.05s ease;
+}
 
+.editor-caret .caret-line {
+  width: 100%;
+  height: 100%;
+  background: var(--accent-primary, #1b4332);
+  border-radius: 2px;
+}
+
+[data-theme="dark"] .editor-caret .caret-line {
+  background: var(--accent-muted, #74c69d);
+}
+
+.editor-caret.blinking .caret-line {
+  animation: caretBlink 1s step-end infinite;
+}
+
+.editor-caret.solid .caret-line {
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes caretBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ==========================================================================
+   ANALYTICS PANEL
+   ========================================================================== */
+#modal-analytics .modal-card {
+  max-width: 800px;
+  max-height: 85vh;
+}
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.analytics-stat-card {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  text-align: center;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.analytics-stat-card::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.analytics-stat-value {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.analytics-stat-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.analytics-section-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.analytics-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.analytics-table thead {
+  background: var(--accent-primary);
+  color: #ffffff;
+}
+
+.analytics-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.analytics-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-family: var(--font-body);
+}
+
+.analytics-table tbody tr:hover {
+  background: rgba(64, 145, 108, 0.06);
+}
+
+.analytics-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.analytics-book-name {
+  font-weight: 700;
+  font-family: var(--font-heading);
+  color: var(--accent-primary);
+}
+
+.analytics-delta {
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+.analytics-delta.positive {
+  color: #2d6a4f;
+}
+
+.analytics-delta.negative {
+  color: #9e2a2b;
+}
+
+[data-theme="dark"] .analytics-delta.positive {
+  color: #74c69d;
+}
+
+[data-theme="dark"] .analytics-delta.negative {
+  color: #e63946;
+}
+
+.analytics-date {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Analytics Chart */
+.analytics-chart {
+  padding: 0.5rem 0;
+}
+
+.chart-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chart-bar-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chart-bar-label {
+  min-width: 120px;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  text-align: right;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-bar-track {
+  flex: 1;
+  height: 28px;
+  background: rgba(64, 145, 108, 0.1);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.chart-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.75rem;
+  min-width: 50px;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chart-bar-fill span {
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+/* Sidebar should be fixed on scroll */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.editor-toolbar {
+  position: sticky;
+  top: 114px;
+  z-index: 8;
+}
+
+/* Book workspace nav sticky */
+.book-workspace-nav {
+  position: sticky;
+  top: 60px;
+  z-index: 9;
+}
+
+/* Make paper-sheet-content user-selectable for writing */
+.paper-sheet-content {
+  user-select: text;
+}
+
+.paper-sheet-content p {
+  margin-bottom: 0;
+}

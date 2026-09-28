@@ -8,8 +8,6 @@ class ImagefictionApp {
     this.currentBookTab = 'editor';
     this.serverOffline = false;
 
-
-
     // Corkboard Node Dragging State
     this.draggedNode = null;
     this.dragOffset = { x: 0, y: 0 };
@@ -20,6 +18,14 @@ class ImagefictionApp {
     this.panY = 0;
     this.isPanning = false;
     this.panStart = { x: 0, y: 0 };
+
+    // Caret / cursor tracking
+    this.caretBlinkInterval = null;
+    this.isTyping = false;
+    this.typingTimeout = null;
+
+    // Analytics tracking
+    this.bookAnalytics = JSON.parse(localStorage.getItem('imagefiction_analytics') || '{}');
 
     this.activeRelationFilters = {
       Aile: true,
@@ -112,6 +118,7 @@ class ImagefictionApp {
         this.bookPersons = parsed.bookPersons;
         this.bookRelations = parsed.bookRelations;
         this.isDarkMode = parsed.isDarkMode || false;
+        this.cursorPositions = parsed.cursorPositions || {};
 
         // Strip any external Unsplash image URLs from savedBooks in user's localStorage
         if (Array.isArray(this.savedBooks)) {
@@ -132,6 +139,7 @@ class ImagefictionApp {
     }
 
     this.isDarkMode = false;
+    this.cursorPositions = {};
     this.userProfile = {
       name: "Yazar",
       email: "yazar@imagefiction.com",
@@ -189,7 +197,8 @@ class ImagefictionApp {
       bookRelations: this.bookRelations,
       isDarkMode: this.isDarkMode,
       customCorpusText: this.customCorpusText,
-      ragHybridMode: this.ragHybridMode
+      ragHybridMode: this.ragHybridMode,
+      cursorPositions: this.cursorPositions || {}
     };
     localStorage.setItem('imagefiction_state', JSON.stringify(data));
   }
@@ -508,6 +517,11 @@ class ImagefictionApp {
           </div>
         </div>
       `;
+      // Add keydown handler for cross-page navigation on first page
+      const firstPageContent = pagesContainer.querySelector('.paper-sheet-content');
+      if (firstPageContent) {
+        firstPageContent.addEventListener('keydown', (e) => this.handleEditorKeydown(e, firstPageContent));
+      }
     }
 
     this.setEditorText(book.content || '');
@@ -520,6 +534,42 @@ class ImagefictionApp {
 
     if (targetTab === 'editor') {
       this.onEditorInput();
+      // Initialize caret for editor
+      setTimeout(() => {
+        this.initCaret();
+        
+        // Restore cursor position if saved
+        const savedPos = (this.cursorPositions || {})[bookTitle];
+        const container = document.getElementById('editor-pages-container');
+        let targetEditor = document.getElementById('rich-editor-content');
+        
+        if (savedPos && savedPos.pageIndex > 0 && container) {
+          const pages = container.querySelectorAll('.paper-sheet-content');
+          if (pages[savedPos.pageIndex]) {
+            targetEditor = pages[savedPos.pageIndex];
+          }
+        }
+
+        if (targetEditor) {
+          targetEditor.focus();
+          const range = document.createRange();
+          const sel = window.getSelection();
+          range.selectNodeContents(targetEditor);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          this.updateCaretPosition();
+        }
+
+        // Restore scroll position or scroll to caret
+        if (savedPos && savedPos.scrollY) {
+          setTimeout(() => {
+            window.scrollTo({ top: savedPos.scrollY, behavior: 'instant' });
+          }, 50);
+        } else {
+          this.scrollToCaretIfNeeded();
+        }
+      }, 150);
     }
   }
 
@@ -531,11 +581,36 @@ class ImagefictionApp {
       return;
     }
 
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-    if (paragraphs.length > 0) {
-      editor.innerHTML = paragraphs.map(p => `<p>${this.escapeHtml(p)}</p>`).join('');
+    // Check if the content is already HTML (saved with paragraph structure)
+    if (text.trim().startsWith('<')) {
+      editor.innerHTML = text;
     } else {
-      editor.innerHTML = `<p>${this.escapeHtml(text)}</p>`;
+      // Legacy plain text: convert to paragraphs, preserving all line breaks
+      const lines = text.split('\n');
+      let html = '';
+      let currentParagraph = '';
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim() === '') {
+          // Empty line = paragraph break
+          if (currentParagraph) {
+            html += `<p>${this.escapeHtml(currentParagraph)}</p>`;
+            currentParagraph = '';
+          }
+          html += '<p><br></p>'; // Preserve the empty line as empty paragraph
+        } else {
+          if (currentParagraph) {
+            currentParagraph += ' ' + line.trim();
+          } else {
+            currentParagraph = line.trim();
+          }
+        }
+      }
+      if (currentParagraph) {
+        html += `<p>${this.escapeHtml(currentParagraph)}</p>`;
+      }
+      editor.innerHTML = html || '<p><br></p>';
     }
   }
 
@@ -564,7 +639,7 @@ class ImagefictionApp {
     const targetId = panes[tabName];
     if (targetId) {
       const el = document.getElementById(targetId);
-      if (el) el.style.display = (tabName === 'editor' ? 'flex' : 'block');
+      if (el) el.style.display = 'block';
     }
 
     document.querySelectorAll('.book-tab-btn').forEach(btn => {
@@ -589,6 +664,19 @@ class ImagefictionApp {
     this.onEditorInput();
   }
 
+  findInBook() {
+    this.playClickSound();
+    const textToFind = prompt("Aranacak kelime veya cümleyi girin:");
+    if (textToFind) {
+      const found = window.find(textToFind, false, false, true, false, true, false);
+      if (found) {
+        this.updateCaretPosition();
+      } else {
+        this.showToast("Kelime bulunamadı.");
+      }
+    }
+  }
+
   getPureEditorText() {
     const container = document.getElementById('editor-pages-container');
     if (!container) {
@@ -607,6 +695,27 @@ class ImagefictionApp {
     });
 
     return texts.join('\n\n');
+  }
+
+  // Get HTML content preserving paragraph structure
+  getEditorHtml() {
+    const container = document.getElementById('editor-pages-container');
+    if (!container) {
+      const single = document.getElementById('rich-editor-content');
+      return single ? single.innerHTML : '';
+    }
+
+    const pages = container.querySelectorAll('.paper-sheet-content');
+    const htmlParts = [];
+    pages.forEach(p => {
+      const clone = p.cloneNode(true);
+      const ghost = clone.querySelector('#editor-ghost-text');
+      if (ghost) ghost.remove();
+      const html = clone.innerHTML || '';
+      if (html.trim() && html.trim() !== '<p><br></p>') htmlParts.push(html);
+    });
+
+    return htmlParts.join('');
   }
 
   clearGhostSuggestion() {
@@ -673,6 +782,7 @@ class ImagefictionApp {
     if (!container || container.offsetWidth === 0) return;
 
     const sheets = Array.from(container.querySelectorAll('.paper-sheet'));
+    let cursorMoved = false;
 
     for (let i = 0; i < sheets.length; i++) {
       const sheet = sheets[i];
@@ -702,6 +812,7 @@ class ImagefictionApp {
 
           const newContent = nextSheet.querySelector('.paper-sheet-content');
           newContent.addEventListener('input', () => this.onEditorInput());
+          newContent.addEventListener('keydown', (e) => this.handleEditorKeydown(e, newContent));
           sheets.push(nextSheet);
         }
 
@@ -714,7 +825,13 @@ class ImagefictionApp {
           continue;
         }
 
+        // Track if cursor was in the moved content
+        const sel = window.getSelection();
+        const cursorInMovedNode = sel && sel.rangeCount > 0 && lastChild.contains(sel.getRangeAt(0).startContainer);
+
         if (lastChild.nodeType === Node.ELEMENT_NODE && lastChild.tagName === 'P' && lastChild.childNodes.length > 0) {
+            lastChild.normalize(); // Ensure contiguous text nodes are merged
+            
             let nextP = nextPageEl.firstChild;
             if (!nextP || nextP.tagName !== 'P' || !nextP.classList.contains('split-node')) {
                 nextP = document.createElement('p');
@@ -730,10 +847,13 @@ class ImagefictionApp {
             if (nodeToMove) {
                 if (nodeToMove.nodeType === Node.TEXT_NODE) {
                     let text = nodeToMove.textContent;
-                    let lastSpace = text.lastIndexOf(' ');
-                    if (lastSpace > 0) {
-                        nodeToMove.textContent = text.substring(0, lastSpace);
-                        let splitText = document.createTextNode(' ' + text.substring(lastSpace + 1));
+                    // Match the last full word (with its preceding whitespace if any) to prevent word splitting
+                    let match = text.match(/(\s+\S+|\S+)\s*$/);
+                    let splitIndex = (match && match.index > 0) ? match.index : 0;
+                    
+                    if (splitIndex > 0) {
+                        nodeToMove.textContent = text.substring(0, splitIndex);
+                        let splitText = document.createTextNode(text.substring(splitIndex));
                         if (nextP.firstChild) {
                             nextP.insertBefore(splitText, nextP.firstChild);
                         } else {
@@ -765,6 +885,23 @@ class ImagefictionApp {
                 nextPageEl.appendChild(lastChild);
             }
         }
+
+        if (cursorInMovedNode) {
+          cursorMoved = true;
+          setTimeout(() => {
+            nextPageEl.focus();
+            const range = document.createRange();
+            const s = window.getSelection();
+            const targetP = nextPageEl.firstChild;
+            if (targetP) {
+                range.selectNodeContents(targetP);
+                range.collapse(false); // Go to the end of the newly pushed paragraph
+                s.removeAllRanges();
+                s.addRange(range);
+            }
+            this.updateCaretPosition();
+          }, 10);
+        }
       }
     }
 
@@ -785,12 +922,114 @@ class ImagefictionApp {
     if (statPage) statPage.textContent = `${activePageCount}`;
   }
 
+  // Handle keydown in editor pages for cross-page navigation
+  handleEditorKeydown(e, pageEl) {
+    // When pressing Down arrow or Enter at the end of a page, move to next page
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      
+      const range = sel.getRangeAt(0);
+      // Check if cursor is at the end of this page
+      const isAtEnd = range.collapsed && this.isCursorAtEnd(pageEl);
+      
+      if (isAtEnd) {
+        const nextPage = this.getNextPage(pageEl);
+        if (nextPage) {
+          e.preventDefault();
+          nextPage.focus();
+          const newRange = document.createRange();
+          newRange.setStart(nextPage, 0);
+          newRange.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(newRange);
+          this.updateCaretPosition();
+          this.scrollToCaretIfNeeded();
+        }
+      }
+    }
+    
+    // When pressing Up arrow or Backspace at the start of a page, move to previous page
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'Backspace') {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      
+      const range = sel.getRangeAt(0);
+      const isAtStart = range.collapsed && this.isCursorAtStart(pageEl);
+      
+      if (isAtStart) {
+        const prevPage = this.getPreviousPage(pageEl);
+        if (prevPage) {
+          e.preventDefault();
+          prevPage.focus();
+          const newRange = document.createRange();
+          newRange.selectNodeContents(prevPage);
+          newRange.collapse(false); // Go to end of previous page
+          sel.removeAllRanges();
+          sel.addRange(newRange);
+          this.updateCaretPosition();
+          this.scrollToCaretIfNeeded();
+          
+          if (e.key === 'Backspace' && pageEl.innerText.trim() === '') {
+            setTimeout(() => this.handlePageOverflow(), 10);
+          }
+        }
+      }
+    }
+  }
+
+  isCursorAtEnd(el) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return false;
+    const range = sel.getRangeAt(0);
+    const testRange = document.createRange();
+    testRange.selectNodeContents(el);
+    testRange.setStart(range.endContainer, range.endOffset);
+    return testRange.toString().trim() === '';
+  }
+
+  isCursorAtStart(el) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return false;
+    const range = sel.getRangeAt(0);
+    const testRange = document.createRange();
+    testRange.selectNodeContents(el);
+    testRange.setEnd(range.startContainer, range.startOffset);
+    return testRange.toString().trim() === '';
+  }
+
+  getNextPage(currentPageEl) {
+    const sheet = currentPageEl.closest('.paper-sheet');
+    if (!sheet) return null;
+    const nextSheet = sheet.nextElementSibling;
+    if (!nextSheet || !nextSheet.classList.contains('paper-sheet')) return null;
+    return nextSheet.querySelector('.paper-sheet-content');
+  }
+
+  getPreviousPage(currentPageEl) {
+    const sheet = currentPageEl.closest('.paper-sheet');
+    if (!sheet) return null;
+    const prevSheet = sheet.previousElementSibling;
+    if (!prevSheet || !prevSheet.classList.contains('paper-sheet')) return null;
+    return prevSheet.querySelector('.paper-sheet-content');
+  }
+
   onEditorInput() {
     this.clearGhostSuggestion();
+
+    // Signal typing state for caret
+    this.isTyping = true;
+    clearTimeout(this.typingTimeout);
+    this.typingTimeout = setTimeout(() => {
+      this.isTyping = false;
+      this.updateCaretPosition();
+    }, 500);
 
     if (this.overflowFrame) cancelAnimationFrame(this.overflowFrame);
     this.overflowFrame = requestAnimationFrame(() => {
       this.handlePageOverflow();
+      this.updateCaretPosition();
+      this.scrollToCaretIfNeeded();
     });
 
     const text = this.getPureEditorText();
@@ -812,8 +1051,21 @@ class ImagefictionApp {
     if (!this.currentBookTitle) return;
     const book = this.savedBooks.find(b => b.title === this.currentBookTitle);
     if (book) {
-      book.content = this.getPureEditorText();
+      const oldContent = book.content || '';
+      // Save HTML to preserve paragraph structure
+      book.content = this.getEditorHtml();
+
+      // Save cursor/scroll position
+      if (!this.cursorPositions) this.cursorPositions = {};
+      this.cursorPositions[this.currentBookTitle] = {
+        scrollY: window.scrollY,
+        pageIndex: this.getActivePageIndex()
+      };
+
       this.saveState();
+
+      // Track analytics
+      this.trackBookChange(this.currentBookTitle, oldContent, book.content);
       
       const status = document.getElementById('editor-autosave-status');
       if (status) {
@@ -822,6 +1074,14 @@ class ImagefictionApp {
         setTimeout(() => { status.style.opacity = '0.7'; }, 2000);
       }
     }
+  }
+
+  getActivePageIndex() {
+    const activeEl = document.activeElement;
+    if (activeEl && activeEl.classList.contains('paper-sheet-content')) {
+      return parseInt(activeEl.dataset.pageIndex) || 0;
+    }
+    return 0;
   }
 
   toggleFocusMode() {
@@ -1396,7 +1656,308 @@ class ImagefictionApp {
     }, 3000);
   }
 
+  /* ------------------------------------------------------------------------
+     CARET / CURSOR MANAGEMENT
+     ------------------------------------------------------------------------ */
+  initCaret() {
+    // Create the blinking caret element if not exists
+    if (!document.getElementById('editor-caret')) {
+      const caret = document.createElement('div');
+      caret.id = 'editor-caret';
+      caret.className = 'editor-caret';
+      caret.innerHTML = '<div class="caret-line"></div>';
+      document.body.appendChild(caret);
+    }
+    this.startCaretBlink();
+  }
 
+  startCaretBlink() {
+    if (this.caretBlinkInterval) clearInterval(this.caretBlinkInterval);
+    const caret = document.getElementById('editor-caret');
+    if (!caret) return;
+    caret.classList.add('blinking');
+  }
+
+  updateCaretPosition() {
+    const caret = document.getElementById('editor-caret');
+    if (!caret) return;
+
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+      caret.style.display = 'none';
+      return;
+    }
+
+    // Only show caret when editor is focused
+    const activeEl = document.activeElement;
+    const isEditorFocused = activeEl && activeEl.classList.contains('paper-sheet-content');
+    if (!isEditorFocused) {
+      caret.style.display = 'none';
+      return;
+    }
+
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+
+    if (rect.width === 0 && rect.height === 0 && rect.left === 0 && rect.top === 0) {
+      // For empty elements or exact text node boundaries, getBoundingClientRect returns 0
+      // We use a temporary zero-width character span to find the exact coordinates
+      const span = document.createElement('span');
+      span.appendChild(document.createTextNode('\u200b')); // zero-width space
+      
+      // Preserve range state
+      const startContainer = range.startContainer;
+      const startOffset = range.startOffset;
+      
+      try {
+        range.insertNode(span);
+        const spanRect = span.getBoundingClientRect();
+        
+        caret.style.display = 'block';
+        caret.style.left = `${spanRect.left + window.scrollX}px`;
+        caret.style.top = `${spanRect.top + window.scrollY}px`;
+        caret.style.height = `${spanRect.height || 24}px`;
+        
+        // Clean up
+        span.remove();
+        
+        // Restore range
+        const newRange = document.createRange();
+        newRange.setStart(startContainer, startOffset);
+        newRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      } catch (err) {
+        caret.style.display = 'none';
+      }
+    } else {
+      caret.style.display = 'block';
+      caret.style.left = `${rect.left + (range.collapsed ? 0 : rect.width) + window.scrollX}px`;
+      caret.style.top = `${rect.top + window.scrollY}px`;
+      caret.style.height = `${rect.height || 24}px`;
+    }
+
+    // Toggle blinking based on typing state
+    if (this.isTyping) {
+      caret.classList.remove('blinking');
+      caret.classList.add('solid');
+    } else {
+      caret.classList.remove('solid');
+      caret.classList.add('blinking');
+    }
+  }
+
+  scrollToCaretIfNeeded() {
+    // Otomatik ekran kaydırma geçici olarak devre dışı bırakıldı (kullanıcı isteği)
+    return;
+  }
+
+  hideCaret() {
+    const caret = document.getElementById('editor-caret');
+    if (caret) caret.style.display = 'none';
+  }
+
+  /* ------------------------------------------------------------------------
+     ANALYTICS & STATISTICS SYSTEM
+     ------------------------------------------------------------------------ */
+  trackBookChange(bookTitle, oldContent, newContent) {
+    if (!this.bookAnalytics[bookTitle]) {
+      this.bookAnalytics[bookTitle] = {
+        totalEdits: 0,
+        wordCountHistory: [],
+        lastEditDate: null,
+        createdDate: new Date().toISOString(),
+        sessions: []
+      };
+    }
+
+    const analytics = this.bookAnalytics[bookTitle];
+    const oldText = this.stripHtmlForCount(oldContent);
+    const newText = this.stripHtmlForCount(newContent);
+    const oldWordCount = oldText.trim() ? oldText.trim().split(/\s+/).length : 0;
+    const newWordCount = newText.trim() ? newText.trim().split(/\s+/).length : 0;
+
+    analytics.totalEdits++;
+    analytics.lastEditDate = new Date().toISOString();
+    analytics.wordCountHistory.push({
+      timestamp: new Date().toISOString(),
+      wordCount: newWordCount,
+      delta: newWordCount - oldWordCount
+    });
+
+    // Keep only last 100 entries
+    if (analytics.wordCountHistory.length > 100) {
+      analytics.wordCountHistory = analytics.wordCountHistory.slice(-100);
+    }
+
+    this.saveAnalytics();
+  }
+
+  stripHtmlForCount(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return tmp.innerText || '';
+  }
+
+  saveAnalytics() {
+    localStorage.setItem('imagefiction_analytics', JSON.stringify(this.bookAnalytics));
+  }
+
+  openAnalyticsPanel() {
+    this.playClickSound();
+    const modal = document.getElementById('modal-analytics');
+    if (modal) {
+      this.renderAnalyticsContent();
+      modal.classList.add('active');
+    }
+  }
+
+  closeAnalyticsPanel() {
+    this.playClickSound();
+    const modal = document.getElementById('modal-analytics');
+    if (modal) modal.classList.remove('active');
+  }
+
+  renderAnalyticsContent() {
+    const container = document.getElementById('analytics-content');
+    if (!container) return;
+
+    // Calculate total stats across all books
+    let totalWords = 0;
+    let totalEdits = 0;
+    let totalChars = 0;
+
+    const bookStats = [];
+
+    this.savedBooks.forEach(book => {
+      const text = this.stripHtmlForCount(book.content || '');
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const chars = text.length;
+      totalWords += words;
+      totalChars += chars;
+
+      const analytics = this.bookAnalytics[book.title] || { totalEdits: 0, wordCountHistory: [], lastEditDate: null };
+      totalEdits += analytics.totalEdits;
+
+      // Calculate today's word delta
+      const today = new Date().toDateString();
+      let todayDelta = 0;
+      if (analytics.wordCountHistory) {
+        analytics.wordCountHistory.forEach(entry => {
+          if (new Date(entry.timestamp).toDateString() === today) {
+            todayDelta += (entry.delta || 0);
+          }
+        });
+      }
+
+      bookStats.push({
+        title: book.title,
+        words,
+        chars,
+        edits: analytics.totalEdits,
+        lastEdit: analytics.lastEditDate,
+        todayDelta,
+        pages: Math.ceil(words / 250) || 1
+      });
+    });
+
+    // Build HTML
+    let html = `
+      <div class="analytics-summary">
+        <div class="analytics-stat-card">
+          <div class="analytics-stat-value">${totalWords.toLocaleString()}</div>
+          <div class="analytics-stat-label">Toplam Kelime</div>
+        </div>
+        <div class="analytics-stat-card">
+          <div class="analytics-stat-value">${totalChars.toLocaleString()}</div>
+          <div class="analytics-stat-label">Toplam Karakter</div>
+        </div>
+        <div class="analytics-stat-card">
+          <div class="analytics-stat-value">${totalEdits.toLocaleString()}</div>
+          <div class="analytics-stat-label">Toplam Düzenleme</div>
+        </div>
+        <div class="analytics-stat-card">
+          <div class="analytics-stat-value">${this.savedBooks.length}</div>
+          <div class="analytics-stat-label">Toplam Kitap</div>
+        </div>
+      </div>
+
+      <h4 class="analytics-section-title">Kitap Bazlı İstatistikler</h4>
+      <div class="analytics-table-wrapper">
+        <table class="analytics-table">
+          <thead>
+            <tr>
+              <th>Kitap</th>
+              <th>Kelime</th>
+              <th>Karakter</th>
+              <th>Sayfa</th>
+              <th>Bugün</th>
+              <th>Düzenleme</th>
+              <th>Son Düzenleme</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    bookStats.forEach(stat => {
+      const deltaClass = stat.todayDelta > 0 ? 'positive' : stat.todayDelta < 0 ? 'negative' : '';
+      const deltaText = stat.todayDelta > 0 ? `+${stat.todayDelta}` : stat.todayDelta === 0 ? '—' : `${stat.todayDelta}`;
+      const lastEditStr = stat.lastEdit
+        ? new Date(stat.lastEdit).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+        : 'Henüz yok';
+
+      html += `
+        <tr>
+          <td class="analytics-book-name">${this.escapeHtml(stat.title)}</td>
+          <td>${stat.words.toLocaleString()}</td>
+          <td>${stat.chars.toLocaleString()}</td>
+          <td>${stat.pages}</td>
+          <td class="analytics-delta ${deltaClass}">${deltaText}</td>
+          <td>${stat.edits}</td>
+          <td class="analytics-date">${lastEditStr}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+
+      <h4 class="analytics-section-title">Kelime İlerleme Grafiği</h4>
+      <div class="analytics-chart" id="analytics-chart"></div>
+    `;
+
+    container.innerHTML = html;
+
+    // Render simple bar chart
+    this.renderAnalyticsChart(bookStats);
+  }
+
+  renderAnalyticsChart(bookStats) {
+    const chartContainer = document.getElementById('analytics-chart');
+    if (!chartContainer) return;
+
+    const maxWords = Math.max(...bookStats.map(s => s.words), 1);
+
+    let chartHtml = '<div class="chart-bars">';
+    bookStats.forEach(stat => {
+      const pct = (stat.words / maxWords * 100).toFixed(1);
+      chartHtml += `
+        <div class="chart-bar-group">
+          <div class="chart-bar-label">${this.escapeHtml(stat.title)}</div>
+          <div class="chart-bar-track">
+            <div class="chart-bar-fill" style="width: ${pct}%">
+              <span>${stat.words.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    chartHtml += '</div>';
+
+    chartContainer.innerHTML = chartHtml;
+  }
 
   escapeHtml(str) {
     if (!str) return '';
@@ -1426,9 +1987,16 @@ class ImagefictionApp {
       }
     });
 
+    // Track cursor position changes for caret
+    document.addEventListener('selectionchange', () => {
+      this.updateCaretPosition();
+    });
+
     document.addEventListener('keydown', (e) => {
-      const editor = document.getElementById('rich-editor-content');
-      if (!editor || document.activeElement !== editor) return;
+      // Work with any focused paper-sheet-content, not just the first one
+      const activeEl = document.activeElement;
+      const isEditor = activeEl && activeEl.classList.contains('paper-sheet-content');
+      if (!isEditor) return;
 
       const ghost = document.getElementById('editor-ghost-text');
       if (ghost) {
@@ -1449,6 +2017,16 @@ class ImagefictionApp {
       if (e.target.closest('button') || e.target.closest('.filter-badge') || e.target.closest('.nav-item') || e.target.closest('.book-card')) {
         this.playClickSound();
       }
+
+      // Update caret when clicking in editor
+      if (e.target.closest('.paper-sheet-content')) {
+        setTimeout(() => this.updateCaretPosition(), 10);
+      }
+    });
+
+    // Handle scroll - update caret position on scroll
+    window.addEventListener('scroll', () => {
+      this.updateCaretPosition();
     });
   }
 }

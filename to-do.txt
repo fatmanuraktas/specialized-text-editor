@@ -1,1 +1,12 @@
-kaydettikten sonra boşluklar düzgün handle edilmiyor
+✅ kaydettikten sonra boşluklar düzgün handle edilmiyor - HTML olarak kaydetme ile çözüldü
+✅ sayfa kendi içinde aşağı yukarı doğru kayma toolbarı olmasın sayfa tamamen webde sığdığı page boyutu kadar olsun aşağı kaydığında web page'i kaysın
+✅ yeni sayfa kaydığında görüntü de aşağı kaysın - imleç takibi ile otomatik scroll (ŞİMDİLİK DEVRE DIŞI)
+✅ kaç kelime yazdın, hangi kitaba ne değişiklikler yaptın ve analiz tabloları gösteren bir pencere - Analiz paneli eklendi
+✅ yanıp sönen | imleç animasyonu - yazma yapmıyorken yanıp söner
+✅ imleç pozisyonu kaydedilir, kitap açıldığında kaldığı yerden (scroll ve sayfa bazında) devam eder
+✅ odak modunda scroll çalışır
+✅ sayfalama (A4 formakaydırmatı): uzun yazılar sayfalara ayrılır
+✅ odak modunda toolbar (sağ sol vs bar) tamamen KAYBOLMAZ, ekranın en üstünde sabit (sticky) kalır; sayfalar bu çubuğun altından kaymaya devam eder.
+✅ sayfalar arası geçişlerde (✅ otomatik ekran  (imleç takibi) şimdilik iptal edildi, sadece imlecin satır satır hareketini görebileceksiniz.boş sayfa dahil) silme (backspace) ve ok tuşları akıcı çalışır. Boş sayfa silindiğinde sistem otomatik olarak önceki sayfanın sonuna gider ve boş sayfayı kaldırır.
+✅ imleç yazılmayan boş alanlarda artık rastgele sağa sola kaymaz, bulunduğu yerde sabit kalır
+✅ sayfa sonlarında veya ortasında Enter'a basıldığında, yeni sayfaya geçen imleç artık sayfanın en altına değil tam başına (ilk satıra) konumlanıyor.

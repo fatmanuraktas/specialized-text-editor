@@ -83,6 +83,11 @@
             <span class="nav-text">Profil</span>
           </button>
 
+          <button class="nav-item" data-segment="Analiz" onclick="app.openAnalyticsPanel()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            <span class="nav-text">Analiz</span>
+          </button>
+
         </nav>
 
         <div class="sidebar-footer">
@@ -124,7 +129,7 @@
           </div>
 
           <!-- View: Single Book Workspace -->
-          <div id="view-book-workspace" class="view-page" style="display: none; height: 100%;">
+          <div id="view-book-workspace" class="view-page" style="display: none;">
             <div class="book-workspace">
               <div class="book-workspace-nav">
                 <button class="book-tab-btn active" data-tab="editor" onclick="app.switchBookTab('editor')">
@@ -153,7 +158,7 @@
 
               <div class="book-tab-content">
                 <!-- Sub-Tab 1: Yazma (Papyrus Rich Text Editor) -->
-                <div id="subtab-editor" class="tab-pane active" style="height: 100%;">
+                <div id="subtab-editor" class="tab-pane active">
                   <div class="editor-container" id="editor-container">
                     <div class="editor-toolbar">
                       <button class="tool-btn" onclick="app.formatText('bold')" title="Kalın"><b>B</b></button>
@@ -164,6 +169,7 @@
                       <button class="tool-btn" onclick="app.formatText('justifyCenter')" title="Ortala">Ortala</button>
                       <button class="tool-btn" onclick="app.formatText('justifyRight')" title="Sağa Hizala">Sağa</button>
                       <span style="color: var(--border-color)">|</span>
+                      <button class="tool-btn" onclick="app.findInBook()">Bul</button>
                       <button class="tool-btn" onclick="app.toggleFocusMode()">Odak Modu</button>
                       <button class="tool-btn" onclick="app.exportCurrentBookText()">İndir (.txt)</button>
                       <span style="margin-left: auto; color: var(--accent-secondary); font-weight: 600; font-size: 0.85rem;" id="editor-autosave-status">Otomatik Kaydedildi</span>
@@ -194,7 +200,7 @@
                 </div>
 
                 <!-- Sub-Tab 2: İlişki Haritası (Large Panning Canvas & Zoom) -->
-                <div id="subtab-corkboard" class="tab-pane" style="display: none; height: 100%;">
+                <div id="subtab-corkboard" class="tab-pane" style="display: none;">
                   <div class="corkboard-container" id="corkboard-container">
                     
                     <!-- Glassmorphic Top Toolbar -->
@@ -520,6 +526,25 @@
 
   <!-- Toast Notification Area -->
   <div id="toast-container"></div>
+
+  <!-- MODAL: Analiz Paneli -->
+  <div class="modal-overlay" id="modal-analytics">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg class="svg-icon" style="margin-right: 0.5rem; color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          Yazım Analizi & İstatistikler
+        </h3>
+        <button class="btn-icon" onclick="app.closeAnalyticsPanel()">✕</button>
+      </div>
+      <div class="modal-body" id="analytics-content">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" onclick="app.closeAnalyticsPanel()">Kapat</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
