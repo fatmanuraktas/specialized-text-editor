@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Imagefiction - Yazma & İlişki Haritası</title>
+  <title>İMGE - Yazma & İlişki Haritası</title>
   <meta name="description" content="Minimalist Dijital Yazarlık ve İlişki Haritası Platformu">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231b4332'><path d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z'/></svg>">
@@ -24,7 +24,7 @@
           <path d="M8 56C16 52 24 54 32 50" stroke="#40916c" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 4"/>
         </svg>
 
-        <h1 class="brand-title-large">Imagefiction</h1>
+        <h1 class="brand-title-large">İMGE</h1>
         <p class="brand-tagline">"novel it and give it to the next person"</p>
       </div>
 
@@ -44,14 +44,14 @@
         </button>
         <div class="divider"><span>veya</span></div>
         <div class="form-group">
-          <input type="email" class="form-control" id="login-email" placeholder="E-posta adresi" value="yazar@imagefiction.com">
+          <input type="email" class="form-control" id="login-email" placeholder="E-posta adresi" value="yazar@imge.com">
         </div>
         <div class="form-group">
           <input type="password" class="form-control" id="login-pass" placeholder="Şifre" value="••••••••">
         </div>
         <button class="btn-primary" onclick="app.showScreen('main-screen')">Giriş Yap</button>
         <div class="login-footer">
-          Hesabın yok mu? <button class="link-btn" onclick="app.showScreen('main-screen')">Imagefiction'a kaydol</button>
+          Hesabın yok mu? <button class="link-btn" onclick="app.showScreen('main-screen')">İMGE'ye kaydol</button>
         </div>
       </div>
     </div>
@@ -63,7 +63,7 @@
         <div class="sidebar-header">
           <div class="brand-logo">
             <svg class="svg-icon" style="color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.5 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-            <span class="brand-logo-text">Imagefiction</span>
+            <span class="brand-logo-text">İMGE</span>
           </div>
         </div>
 
@@ -113,7 +113,7 @@
           <div class="right-nav">
             <div class="user-badge" onclick="app.navigate('Profil')" style="cursor: pointer;">
               <div class="user-avatar-tiny" id="header-user-initial">A</div>
-              <span id="header-user-name">Antigravity Yazar</span>
+              <span id="header-user-name">Yazar</span>
             </div>
           </div>
         </header>
@@ -170,8 +170,44 @@
                       <button class="tool-btn" onclick="app.formatText('justifyRight')" title="Sağa Hizala">Sağa</button>
                       <span style="color: var(--border-color)">|</span>
                       <button class="tool-btn" onclick="app.findInBook()">Bul</button>
+                      <button class="tool-btn" id="btn-spellcheck" onclick="app.checkGrammar()">Yazım Denetimi</button>
                       <button class="tool-btn" onclick="app.toggleFocusMode()">Odak Modu</button>
-                      <button class="tool-btn" onclick="app.exportCurrentBookText()">İndir (.txt)</button>
+                      <div class="export-dropdown-wrapper">
+                        <button class="tool-btn" onclick="app.toggleExportMenu(event)">
+                          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          İndir ▾
+                        </button>
+                        <div class="export-dropdown-menu" id="export-dropdown-menu">
+                          <button class="export-menu-item" onclick="app.exportAs('pdf')">
+                            <span class="export-icon export-icon-pdf">PDF</span>
+                            <div class="export-info">
+                              <span class="export-format-name">PDF Belgesi</span>
+                              <span class="export-format-desc">Baskıya hazır, sayfalı format</span>
+                            </div>
+                          </button>
+                          <button class="export-menu-item" onclick="app.exportAs('docx')">
+                            <span class="export-icon export-icon-docx">DOC</span>
+                            <div class="export-info">
+                              <span class="export-format-name">Word Belgesi (.docx)</span>
+                              <span class="export-format-desc">Microsoft Word uyumlu</span>
+                            </div>
+                          </button>
+                          <button class="export-menu-item" onclick="app.exportAs('txt')">
+                            <span class="export-icon export-icon-txt">TXT</span>
+                            <div class="export-info">
+                              <span class="export-format-name">Düz Metin (.txt)</span>
+                              <span class="export-format-desc">Sade, formatsız metin</span>
+                            </div>
+                          </button>
+                          <button class="export-menu-item" onclick="app.exportAs('html')">
+                            <span class="export-icon export-icon-html">HTML</span>
+                            <div class="export-info">
+                              <span class="export-format-name">HTML Sayfası (.html)</span>
+                              <span class="export-format-desc">Zengin biçimli web formatı</span>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
                       <span style="margin-left: auto; color: var(--accent-secondary); font-weight: 600; font-size: 0.85rem;" id="editor-autosave-status">Otomatik Kaydedildi</span>
                     </div>
 
@@ -185,7 +221,7 @@
                             <p>Gecenin karanlığı şehri kapladığında...</p>
                           </div>
                           <div class="paper-sheet-footer">
-                            <span>Imagefiction Taslak</span>
+                            <span>İMGE Taslak</span>
                           </div>
                         </div>
                       </div>
@@ -194,7 +230,7 @@
                     <div class="editor-statusbar">
                       <span>Sayfa: <strong id="stat-page-count">1</strong></span>
                       <span>Kelime Sayısı: <strong id="stat-word-count">0</strong></span>
-                      <span>Karakter Sayısı: <strong id="stat-char-count">0</strong></span>
+                      <span>Kişi Sayısı: <strong id="stat-char-count">0</strong></span>
                     </div>
                   </div>
                 </div>
@@ -292,21 +328,21 @@
               <div class="profile-header">
                 <div class="profile-avatar-large" id="profile-avatar-display">A</div>
                 <div>
-                  <h2 style="font-family: var(--font-heading);" id="profile-display-name">Antigravity Yazar</h2>
-                  <p style="color: var(--text-secondary);" id="profile-display-email">yazar@imagefiction.com</p>
+                  <h2 style="font-family: var(--font-heading);" id="profile-display-name">Yazar</h2>
+                  <p style="color: var(--text-secondary);" id="profile-display-email">yazar@imge.com</p>
                 </div>
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label style="font-weight: 600;">Ad Soyad / Yazar Adı</label>
-                <input type="text" id="profile-input-name" class="form-control" value="Imagefiction Yazarı">
+                <input type="text" id="profile-input-name" class="form-control" value="Yazar">
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label style="font-weight: 600;">E-posta</label>
-                <input type="email" id="profile-input-email" class="form-control" value="yazar@imagefiction.com">
+                <input type="email" id="profile-input-email" class="form-control" value="yazar@imge.com">
               </div>
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="font-weight: 600;">Biyografi / Hakkımda</label>
-                <textarea id="profile-input-bio" class="form-control" rows="4">Imagefiction platformunda hikayeler kaleme alan tutkulu yazar.</textarea>
+                <textarea id="profile-input-bio" class="form-control" rows="4">İMGE platformunda hikayeler kaleme alan tutkulu yazar.</textarea>
               </div>
               <button class="btn-primary" onclick="app.saveProfile()">Profili Güncelle</button>
             </div>
@@ -446,7 +482,7 @@
         
         <div class="dossier-header">
           <div>
-            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-primary);">Imagefiction Karakter Dosyası</span>
+            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-primary);">İMGE Karakter Dosyası</span>
             <h2 id="dossier-name" style="font-family: var(--font-heading); font-size: 1.6rem; margin-top: 0.2rem;">-</h2>
           </div>
           <div class="dossier-stamp">GİZLİ / POLİSİYE DOKÜMAN</div>

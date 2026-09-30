@@ -142,8 +142,8 @@ class ImagefictionApp {
     this.cursorPositions = {};
     this.userProfile = {
       name: "Yazar",
-      email: "yazar@imagefiction.com",
-      bio: "Imagefiction platformunda hikayeler kurgulayan ve karakter ilişkilerini haritalandıran tutkulu yazar.",
+      email: "yazar@imge.com",
+      bio: "İMGE platformunda hikayeler kurgulayan ve karakter ilişkilerini haritalandıran tutkulu yazar.",
       avatarPath: ""
     };
 
@@ -207,7 +207,7 @@ class ImagefictionApp {
      3. NAVIGATION & THEME CONTROLLER
      ------------------------------------------------------------------------ */
   showScreen(screenId) {
-    console.log("➡️ [Imagefiction] Ekran Değiştirildi ->", screenId);
+    console.log("➡️ [İMGE] Ekran Değiştirildi ->", screenId);
     this.playClickSound();
 
     if (this.isServerAvailable()) {
@@ -513,7 +513,7 @@ class ImagefictionApp {
           </div>
           <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true" data-page-index="0" oninput="app.onEditorInput()"></div>
           <div class="paper-sheet-footer">
-            <span>Imagefiction Taslak</span>
+            <span>İMGE Taslak</span>
           </div>
         </div>
       `;
@@ -677,6 +677,175 @@ class ImagefictionApp {
     }
   }
 
+  async checkGrammar() {
+    this.playClickSound();
+    const btn = document.getElementById('btn-spellcheck');
+    if (btn) btn.innerHTML = "Denetleniyor...";
+
+    const editor = document.getElementById('editor-pages-container');
+    if (!editor) return;
+    
+    let fullText = "";
+    let textNodes = [];
+    
+    function walk(node) {
+      if (node.nodeType === 3) {
+        const len = node.nodeValue.length;
+        textNodes.push({ node: node, start: fullText.length, end: fullText.length + len });
+        fullText += node.nodeValue;
+      } else if (node.nodeType === 1) {
+        if (node.id === 'editor-ghost-text' || node.classList.contains('spell-error')) {
+          for (let child of node.childNodes) walk(child);
+        } else {
+          for (let child of node.childNodes) walk(child);
+          if (['P', 'DIV', 'BR'].includes(node.tagName)) {
+             fullText += "\n";
+          }
+        }
+      }
+    }
+    
+    this.clearSpellErrors();
+    const pages = editor.querySelectorAll('.paper-sheet-content');
+    pages.forEach(p => walk(p));
+
+    if (!fullText.trim()) {
+      if (btn) btn.innerHTML = "Yazım Denetimi";
+      return;
+    }
+
+    try {
+      const response = await fetch('https://api.languagetoolplus.com/v2/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          text: fullText,
+          language: 'tr'
+        })
+      });
+      
+      const data = await response.json();
+      this.highlightGrammarErrors(data.matches, textNodes);
+      
+    } catch (err) {
+      console.error(err);
+      this.showToast("Yazım denetimi sunucusuna ulaşılamadı.");
+    }
+    if (btn) btn.innerHTML = "Yazım Denetimi";
+  }
+
+  clearSpellErrors() {
+    const editor = document.getElementById('editor-pages-container');
+    if (!editor) return;
+    const spans = editor.querySelectorAll('.spell-error');
+    spans.forEach(span => {
+      const parent = span.parentNode;
+      while(span.firstChild) parent.insertBefore(span.firstChild, span);
+      parent.removeChild(span);
+    });
+    const pages = editor.querySelectorAll('.paper-sheet-content');
+    pages.forEach(p => p.normalize());
+  }
+
+  highlightGrammarErrors(matches, textNodes) {
+    if (!matches || matches.length === 0) {
+      this.showToast("Hata bulunamadı, metniniz harika!");
+      return;
+    }
+    
+    this.showToast(`${matches.length} hata bulundu. Üzerine tıklayarak düzeltebilirsiniz.`);
+    
+    const sortedMatches = matches.sort((a,b) => b.offset - a.offset);
+    
+    for (let match of sortedMatches) {
+       const errStart = match.offset;
+       const errEnd = match.offset + match.length;
+       
+       const startNodeObj = textNodes.find(n => errStart >= n.start && errStart < n.end);
+       if (!startNodeObj) continue;
+       
+       const node = startNodeObj.node;
+       const localStart = errStart - startNodeObj.start;
+       const localEnd = Math.min(errEnd - startNodeObj.start, node.nodeValue.length);
+       
+       const beforeText = node.nodeValue.substring(0, localStart);
+       const errorText = node.nodeValue.substring(localStart, localEnd);
+       const afterText = node.nodeValue.substring(localEnd);
+       
+       const span = document.createElement('span');
+       span.className = 'spell-error';
+       span.textContent = errorText;
+       const replacements = match.replacements.map(r => r.value).slice(0,5).join('|');
+       span.setAttribute('data-replacements', replacements);
+       span.setAttribute('data-message', match.message);
+       span.onclick = (e) => this.showSpellMenu(e, span);
+       
+       const parent = node.parentNode;
+       if (beforeText) parent.insertBefore(document.createTextNode(beforeText), node);
+       parent.insertBefore(span, node);
+       if (afterText) parent.insertBefore(document.createTextNode(afterText), node);
+       
+       parent.removeChild(node);
+    }
+  }
+
+  showSpellMenu(e, spanElement) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    let menu = document.getElementById('spell-context-menu');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'spell-context-menu';
+      menu.className = 'spell-menu';
+      document.body.appendChild(menu);
+      
+      document.addEventListener('click', () => {
+         if (menu.style.display === 'flex') menu.style.display = 'none';
+      });
+    }
+    
+    menu.innerHTML = '';
+    
+    const msg = spanElement.getAttribute('data-message');
+    const title = document.createElement('div');
+    title.className = 'spell-menu-title';
+    title.textContent = msg;
+    menu.appendChild(title);
+    
+    const reps = spanElement.getAttribute('data-replacements');
+    if (reps) {
+       const suggestions = reps.split('|');
+       suggestions.forEach(sug => {
+         const item = document.createElement('div');
+         item.className = 'spell-menu-item';
+         item.textContent = sug;
+         item.onclick = () => {
+           const textNode = document.createTextNode(sug);
+           spanElement.parentNode.replaceChild(textNode, spanElement);
+           this.onEditorInput();
+         };
+         menu.appendChild(item);
+       });
+    }
+    
+    const ignoreItem = document.createElement('div');
+    ignoreItem.className = 'spell-menu-item';
+    ignoreItem.style.color = 'var(--accent-secondary)';
+    ignoreItem.textContent = "Çizgiyi Kaldır (Yoksay)";
+    ignoreItem.onclick = () => {
+       const textNode = document.createTextNode(spanElement.textContent);
+       spanElement.parentNode.replaceChild(textNode, spanElement);
+    };
+    menu.appendChild(ignoreItem);
+    
+    menu.style.display = 'flex';
+    const rect = spanElement.getBoundingClientRect();
+    menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
+    menu.style.left = `${rect.left + window.scrollX}px`;
+  }
+
+
   getPureEditorText() {
     const container = document.getElementById('editor-pages-container');
     if (!container) {
@@ -805,7 +974,7 @@ class ImagefictionApp {
             </div>
             <div class="paper-sheet-content" contenteditable="true" data-page-index="${sheets.length}"></div>
             <div class="paper-sheet-footer">
-              <span>Imagefiction Taslak</span>
+              <span>İMGE Taslak</span>
             </div>
           `;
           container.appendChild(nextSheet);
@@ -1033,13 +1202,16 @@ class ImagefictionApp {
     });
 
     const text = this.getPureEditorText();
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    const chars = text.length;
+    const normalizedText = text.trim().replace(/\s+/g, ' ');
+    const words = normalizedText ? normalizedText.split(' ').length : 0;
+    
+    // Count story characters (persons) instead of text characters
+    const personsCount = this.bookPersons ? this.bookPersons.filter(p => p.book_title === this.currentBookTitle).length : 0;
 
     const elWords = document.getElementById('stat-word-count');
-    const elChars = document.getElementById('stat-char-count');
+    const elChars = document.getElementById('stat-char-count'); // Actually displays persons count now
     if (elWords) elWords.textContent = words.toLocaleString();
-    if (elChars) elChars.textContent = chars.toLocaleString();
+    if (elChars) elChars.textContent = personsCount.toString();
 
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
@@ -1092,17 +1264,275 @@ class ImagefictionApp {
   }
 
   exportCurrentBookText() {
-    this.playPopSound();
-    if (!this.currentBookTitle) return;
-    const book = this.savedBooks.find(b => b.title === this.currentBookTitle);
-    const content = book ? book.content : '';
+    // Legacy fallback — exports as TXT
+    this.exportAs('txt');
+  }
 
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  toggleExportMenu(event) {
+    event.stopPropagation();
+    this.playClickSound();
+    const menu = document.getElementById('export-dropdown-menu');
+    if (menu) menu.classList.toggle('active');
+  }
+
+  closeExportMenu() {
+    const menu = document.getElementById('export-dropdown-menu');
+    if (menu) menu.classList.remove('active');
+  }
+
+  exportAs(format) {
+    this.playPopSound();
+    this.closeExportMenu();
+    if (!this.currentBookTitle) return;
+
+    this.saveCurrentBookText();
+    const book = this.savedBooks.find(b => b.title === this.currentBookTitle);
+    if (!book) return;
+
+    switch (format) {
+      case 'pdf':  this.exportAsPDF(book); break;
+      case 'docx': this.exportAsDOCX(book); break;
+      case 'txt':  this.exportAsTXT(book); break;
+      case 'html': this.exportAsHTML(book); break;
+      default:     this.exportAsTXT(book); break;
+    }
+  }
+
+  /* -- TXT Export -- */
+  exportAsTXT(book) {
+    const htmlContent = book.content || '';
+    const temp = document.createElement('div');
+    temp.innerHTML = htmlContent;
+    const plainText = temp.innerText || temp.textContent || '';
+
+    const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
+    this.downloadBlob(blob, `${book.title}.txt`);
+    this.showToast("Metin .txt olarak indirildi.");
+  }
+
+  /* -- HTML Export -- */
+  exportAsHTML(book) {
+    const htmlContent = book.content || '';
+    const fullHtml = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${this.escapeHtml(book.title)}</title>
+  <style>
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      max-width: 700px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.8;
+      color: #2b2d42;
+      background: #fdfbf7;
+    }
+    h1 {
+      font-size: 2rem;
+      border-bottom: 2px solid #40916c;
+      padding-bottom: 0.5rem;
+      color: #1b4332;
+    }
+    .meta { color: #888; font-size: 0.9rem; margin-bottom: 2rem; }
+    p { margin-bottom: 1rem; text-indent: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>${this.escapeHtml(book.title)}</h1>
+  <p class="meta">Yazar: ${this.escapeHtml(book.author || 'Yazar')} — İMGE ile dışa aktarıldı</p>
+  <div>${htmlContent}</div>
+</body>
+</html>`;
+
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+    this.downloadBlob(blob, `${book.title}.html`);
+    this.showToast("Metin .html olarak indirildi.");
+  }
+
+  /* -- DOCX Export (Word uyumlu HTML-based .doc) -- */
+  exportAsDOCX(book) {
+    const htmlContent = book.content || '';
+    const docContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:w="urn:schemas-microsoft-com:office:word"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <title>${this.escapeHtml(book.title)}</title>
+        <!--[if gte mso 9]>
+        <xml>
+          <w:WordDocument>
+            <w:View>Print</w:View>
+            <w:Zoom>100</w:Zoom>
+            <w:DoNotOptimizeForBrowser/>
+          </w:WordDocument>
+        </xml>
+        <![endif]-->
+        <style>
+          body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #222;
+          }
+          h1 {
+            font-size: 22pt;
+            color: #1b4332;
+            border-bottom: 1pt solid #40916c;
+            padding-bottom: 6pt;
+          }
+          p { margin-bottom: 6pt; text-indent: 24pt; }
+          .meta { color: #888; font-size: 10pt; margin-bottom: 18pt; }
+        </style>
+      </head>
+      <body>
+        <h1>${this.escapeHtml(book.title)}</h1>
+        <p class="meta">Yazar: ${this.escapeHtml(book.author || 'Yazar')}</p>
+        <div>${htmlContent}</div>
+      </body>
+      </html>`;
+
+    const blob = new Blob(['\ufeff' + docContent], {
+      type: 'application/msword'
+    });
+    this.downloadBlob(blob, `${book.title}.doc`);
+    this.showToast("Metin .doc (Word) olarak indirildi.");
+  }
+
+  /* -- PDF Export (Tarayıcı Yazdırma Motoru) -- */
+  exportAsPDF(book) {
+    const htmlContent = book.content || '';
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      this.showToast("Açılır pencere engellendi. Lütfen tarayıcınızda izin verin.");
+      return;
+    }
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>${this.escapeHtml(book.title)} — PDF</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 25mm 20mm 20mm 20mm;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', 'Times New Roman', 'Noto Serif', serif;
+      font-size: 12pt;
+      line-height: 1.8;
+      color: #2b2d42;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .pdf-container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .pdf-title {
+      font-size: 24pt;
+      font-weight: 700;
+      color: #1b4332;
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.5px;
+    }
+    .pdf-author {
+      font-size: 10pt;
+      color: #888;
+      margin-bottom: 0.8rem;
+    }
+    .pdf-divider {
+      border: none;
+      border-top: 2px solid #40916c;
+      margin-bottom: 1.5rem;
+    }
+    .pdf-content p {
+      margin-bottom: 0.8rem;
+      text-indent: 1.5rem;
+      text-align: justify;
+      orphans: 3;
+      widows: 3;
+    }
+    .pdf-content p:first-child {
+      text-indent: 0;
+    }
+    .pdf-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 8pt;
+      color: #aaa;
+      padding: 8px 0;
+      border-top: 1px solid #e0e0e0;
+    }
+    @media screen {
+      body { background: #f5f5f5; padding: 2rem; }
+      .pdf-container {
+        background: #fff;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        padding: 3rem;
+        max-width: 800px;
+      }
+      .pdf-print-hint {
+        text-align: center;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        background: #e8f5e9;
+        border-radius: 8px;
+        font-family: sans-serif;
+        font-size: 10pt;
+        color: #2e7d32;
+      }
+      .pdf-print-hint strong { display: block; margin-bottom: 4px; }
+    }
+    @media print {
+      .pdf-print-hint { display: none !important; }
+      .pdf-container { padding: 0; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="pdf-container">
+    <div class="pdf-print-hint">
+      <strong>📄 PDF olarak kaydetmek için:</strong>
+      Yazdır penceresinde hedef olarak "PDF olarak kaydet" seçeneğini seçin.
+    </div>
+    <h1 class="pdf-title">${this.escapeHtml(book.title)}</h1>
+    <p class="pdf-author">Yazar: ${this.escapeHtml(book.author || 'Yazar')}</p>
+    <hr class="pdf-divider">
+    <div class="pdf-content">${htmlContent}</div>
+    <div class="pdf-footer">İMGE — Dijital Yazarlık Platformu</div>
+  </div>
+  <script>
+    window.onload = function() {
+      setTimeout(function() { window.print(); }, 400);
+    };
+  <\/script>
+</body>
+</html>`);
+    printWindow.document.close();
+    this.showToast('PDF yazdırma penceresi açıldı. "PDF olarak kaydet" seçeneğini kullanın.');
+  }
+
+  /* -- Download Helper -- */
+  downloadBlob(blob, filename) {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${this.currentBookTitle}.txt`;
+    link.download = filename;
+    document.body.appendChild(link);
     link.click();
-    this.showToast("Metin .txt olarak indirildi.");
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(link.href), 5000);
   }
 
   saveBookSettings() {
@@ -1831,10 +2261,13 @@ class ImagefictionApp {
 
     this.savedBooks.forEach(book => {
       const text = this.stripHtmlForCount(book.content || '');
-      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-      const chars = text.length;
+      const normalizedText = text.trim().replace(/\s+/g, ' ');
+      const words = normalizedText ? normalizedText.split(' ').length : 0;
+      
+      const personsCount = this.bookPersons ? this.bookPersons.filter(p => p.book_title === book.title).length : 0;
+      
       totalWords += words;
-      totalChars += chars;
+      totalChars += personsCount;
 
       const analytics = this.bookAnalytics[book.title] || { totalEdits: 0, wordCountHistory: [], lastEditDate: null };
       totalEdits += analytics.totalEdits;
@@ -1853,7 +2286,7 @@ class ImagefictionApp {
       bookStats.push({
         title: book.title,
         words,
-        chars,
+        chars: personsCount,
         edits: analytics.totalEdits,
         lastEdit: analytics.lastEditDate,
         todayDelta,
@@ -1870,7 +2303,7 @@ class ImagefictionApp {
         </div>
         <div class="analytics-stat-card">
           <div class="analytics-stat-value">${totalChars.toLocaleString()}</div>
-          <div class="analytics-stat-label">Toplam Karakter</div>
+          <div class="analytics-stat-label">Toplam Kişi</div>
         </div>
         <div class="analytics-stat-card">
           <div class="analytics-stat-value">${totalEdits.toLocaleString()}</div>
@@ -1889,7 +2322,7 @@ class ImagefictionApp {
             <tr>
               <th>Kitap</th>
               <th>Kelime</th>
-              <th>Karakter</th>
+              <th>Kişi</th>
               <th>Sayfa</th>
               <th>Bugün</th>
               <th>Düzenleme</th>
@@ -2012,6 +2445,9 @@ class ImagefictionApp {
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.book-menu-btn') && !e.target.closest('.book-context-menu')) {
         this.closeAllContextMenus();
+      }
+      if (!e.target.closest('.export-dropdown-wrapper')) {
+        this.closeExportMenu();
       }
       
       if (e.target.closest('button') || e.target.closest('.filter-badge') || e.target.closest('.nav-item') || e.target.closest('.book-card')) {

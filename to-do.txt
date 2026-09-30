@@ -5,8 +5,15 @@
 ✅ yanıp sönen | imleç animasyonu - yazma yapmıyorken yanıp söner
 ✅ imleç pozisyonu kaydedilir, kitap açıldığında kaldığı yerden (scroll ve sayfa bazında) devam eder
 ✅ odak modunda scroll çalışır
-✅ sayfalama (A4 formakaydırmatı): uzun yazılar sayfalara ayrılır
+✅ sayfalama (A4 formatı): uzun yazılar sayfalara ayrılır
 ✅ odak modunda toolbar (sağ sol vs bar) tamamen KAYBOLMAZ, ekranın en üstünde sabit (sticky) kalır; sayfalar bu çubuğun altından kaymaya devam eder.
-✅ sayfalar arası geçişlerde (✅ otomatik ekran  (imleç takibi) şimdilik iptal edildi, sadece imlecin satır satır hareketini görebileceksiniz.boş sayfa dahil) silme (backspace) ve ok tuşları akıcı çalışır. Boş sayfa silindiğinde sistem otomatik olarak önceki sayfanın sonuna gider ve boş sayfayı kaldırır.
+✅ sayfalar arası geçişlerde (boş sayfa dahil) silme (backspace) ve ok tuşları akıcı çalışır. Boş sayfa silindiğinde sistem otomatik olarak önceki sayfanın sonuna gider ve boş sayfayı kaldırır.
 ✅ imleç yazılmayan boş alanlarda artık rastgele sağa sola kaymaz, bulunduğu yerde sabit kalır
 ✅ sayfa sonlarında veya ortasında Enter'a basıldığında, yeni sayfaya geçen imleç artık sayfanın en altına değil tam başına (ilk satıra) konumlanıyor.
+✅ otomatik ekran kaydırma (imleç takibi) şimdilik iptal edildi, sadece imlecin satır satır hareketini görebileceksiniz.
+✅ sayfa sonuna sığmayan kelimeler ("diyelim ki" örneği) artık ortadan bölünmüyor. Kelimenin tamamı sığmadığı anda bir bütün olarak tamamen alt sayfaya taşınır.
+✅ Sayfa taşıp yeni sayfa oluştuğunda imlecin zorla "sayfa başına" gönderilmesi iptal edildi. Artık taşan kelimenin/cümlenin hemen yanından (kaldığınız yerden) devam ediyorsunuz.
+✅ Araç çubuğuna (toolbar) "Bul" düğmesi eklendi. Kelime aratıp kolayca bulunmasını sağlar.
+✅ Analiz kısmındaki (ve durum çubuğundaki) karakter sayısının HTML yapısından dolayı hatalı (fazla/eksik) hesaplanması düzeltildi. Artık gerçek kelimeler arasındaki tekil boşluklar dikkate alınarak sayılıyor.
+✅ Projenin tüm isimlendirmeleri (UI üzerinde) "Imagefiction"dan "İMGE"ye güncellendi. E-postalar yazar@imge.com oldu.
+✅ Varsayılan (default) profil oluşturulduğunda isim artık "Yazar" olarak gelir.
