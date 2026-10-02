@@ -1616,6 +1616,7 @@ class ImagefictionApp {
 
     this.applyViewportTransform();
     this.drawRelationLines();
+    this.renderCorkboardLegend();
   }
 
   startDragNode(e, personData, nodeElement) {
@@ -1753,14 +1754,118 @@ class ImagefictionApp {
         const midX = (x1 + x2) / 2;
         const midY = (y1 + y2) / 2;
 
+        // Background rect behind the label for readability
+        const labelText = rel.type;
+        const textWidth = labelText.length * 7 + 16;
+        const textHeight = 20;
+
+        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bgRect.setAttribute('x', midX - textWidth / 2);
+        bgRect.setAttribute('y', midY - textHeight / 2);
+        bgRect.setAttribute('width', textWidth);
+        bgRect.setAttribute('height', textHeight);
+        bgRect.setAttribute('class', 'relation-label-bg');
+        svg.appendChild(bgRect);
+
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', midX);
         text.setAttribute('y', midY);
         text.setAttribute('class', 'relation-label');
-        text.textContent = rel.type;
+        text.textContent = labelText;
 
         svg.appendChild(text);
       }
+    });
+  }
+
+  renderCorkboardLegend() {
+    const container = document.getElementById('corkboard-container');
+    if (!container) return;
+
+    // Remove existing legend if any
+    const existing = container.querySelector('.corkboard-legend');
+    if (existing) existing.remove();
+
+    const legendColors = {
+      'Aile': '#2d6a4f',
+      'Arkadaşlık': '#40916c',
+      'Aşk': '#b08968',
+      'Düşmanlık': '#9e2a2b'
+    };
+
+    const legend = document.createElement('div');
+    legend.className = 'corkboard-legend';
+    legend.id = 'corkboard-legend';
+
+    let itemsHtml = '';
+    for (const [type, color] of Object.entries(legendColors)) {
+      itemsHtml += `
+        <div class="legend-item">
+          <span class="legend-line" style="background-color: ${color};"></span>
+          <span>${type}</span>
+        </div>
+      `;
+    }
+
+    legend.innerHTML = `
+      <div class="corkboard-legend-header" id="legend-drag-handle">
+        <span>İlişki Türleri</span>
+        <button class="corkboard-legend-close" onclick="app.closeCorkboardLegend()" title="Kapat">✕</button>
+      </div>
+      <div class="corkboard-legend-body">
+        ${itemsHtml}
+      </div>
+    `;
+
+    container.appendChild(legend);
+    this.initLegendDrag(legend);
+  }
+
+  closeCorkboardLegend() {
+    const legend = document.getElementById('corkboard-legend');
+    if (legend) legend.classList.add('hidden');
+  }
+
+  showCorkboardLegend() {
+    const legend = document.getElementById('corkboard-legend');
+    if (legend) legend.classList.remove('hidden');
+  }
+
+  initLegendDrag(legendEl) {
+    const handle = legendEl.querySelector('#legend-drag-handle');
+    if (!handle) return;
+
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.corkboard-legend-close')) return;
+      isDragging = true;
+      const rect = legendEl.getBoundingClientRect();
+      const parentRect = legendEl.parentElement.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const parentRect = legendEl.parentElement.getBoundingClientRect();
+      let newLeft = e.clientX - parentRect.left - offsetX;
+      let newTop = e.clientY - parentRect.top - offsetY;
+
+      // Keep within parent bounds
+      newLeft = Math.max(0, Math.min(newLeft, parentRect.width - legendEl.offsetWidth));
+      newTop = Math.max(0, Math.min(newTop, parentRect.height - legendEl.offsetHeight));
+
+      legendEl.style.left = `${newLeft}px`;
+      legendEl.style.top = `${newTop}px`;
+      legendEl.style.right = 'auto';
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
     });
   }
 

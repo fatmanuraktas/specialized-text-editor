@@ -1263,12 +1263,101 @@ body::before {
 .relation-line.Düşmanlık { stroke: #9e2a2b; }
 
 .relation-label {
-  fill: #ffffff;
+  fill: var(--text-primary);
   font-size: 11px;
   font-weight: 700;
   font-family: var(--font-heading);
   text-anchor: middle;
   dominant-baseline: central;
+  pointer-events: none;
+}
+
+.relation-label-bg {
+  fill: var(--bg-card, #ffffff);
+  stroke: var(--border-color);
+  stroke-width: 1;
+  rx: 6;
+  ry: 6;
+  opacity: 0.92;
+}
+
+[data-theme="dark"] .relation-label-bg {
+  fill: rgba(18, 24, 21, 0.9);
+}
+
+/* İlişki Haritası Lejant (Legend) Paneli */
+.corkboard-legend {
+  position: absolute;
+  top: 60px;
+  right: 16px;
+  z-index: 50;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 0;
+  min-width: 180px;
+  max-width: 220px;
+  cursor: default;
+  user-select: none;
+}
+
+.corkboard-legend.hidden {
+  display: none;
+}
+
+.corkboard-legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+  cursor: grab;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.corkboard-legend-header:active {
+  cursor: grabbing;
+}
+
+.corkboard-legend-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+}
+
+.corkboard-legend-close:hover {
+  color: var(--accent-danger);
+}
+
+.corkboard-legend-body {
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.legend-line {
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 #corkboard-nodes-layer {
