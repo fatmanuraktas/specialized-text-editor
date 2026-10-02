@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="tr" data-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>İMGE - Yazma & İlişki Haritası</title>
   <meta name="description" content="Minimalist Dijital Yazarlık ve İlişki Haritası Platformu">
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231b4332'><path d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z'/></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231b4332'><path d='M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z'/></svg>">
 </head>
+
 <body>
 
   <div id="app">
@@ -15,13 +18,16 @@
     <!-- 1. STARTUP SCREEN (Animated Pen Logo + Tagline) -->
     <div id="startup-screen" class="screen">
       <div class="startup-decor"></div>
-      
+
       <div class="pen-logo-container">
         <!-- Animated Pen / Quill SVG -->
         <svg class="pen-animated-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path class="pen-nib-path" d="M12 52L22 42L48 16C50.2 13.8 50.2 10.2 48 8C45.8 5.8 42.2 5.8 40 8L14 34L4 44L12 52Z" stroke="#74c69d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M36 12L44 20" stroke="#d8f3dc" stroke-width="2" stroke-linecap="round"/>
-          <path d="M8 56C16 52 24 54 32 50" stroke="#40916c" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 4"/>
+          <path class="pen-nib-path"
+            d="M12 52L22 42L48 16C50.2 13.8 50.2 10.2 48 8C45.8 5.8 42.2 5.8 40 8L14 34L4 44L12 52Z" stroke="#74c69d"
+            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M36 12L44 20" stroke="#d8f3dc" stroke-width="2" stroke-linecap="round" />
+          <path d="M8 56C16 52 24 54 32 50" stroke="#40916c" stroke-width="2" stroke-linecap="round"
+            stroke-dasharray="2 4" />
         </svg>
 
         <h1 class="brand-title-large">İMGE</h1>
@@ -30,7 +36,10 @@
 
       <button class="btn-hero" onclick="app.showScreen('main-screen')">
         <span>Başlat</span>
-        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="svg-icon" viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
       </button>
     </div>
 
@@ -39,7 +48,16 @@
       <div class="login-card">
         <h2 class="login-title">Giriş Yap</h2>
         <button class="btn-google" onclick="app.handleGoogleLogin()">
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+            <path fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+          </svg>
           Google ile Devam Et
         </button>
         <div class="divider"><span>veya</span></div>
@@ -62,29 +80,44 @@
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <div class="brand-logo">
-            <svg class="svg-icon" style="color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.5 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            <svg class="svg-icon" style="color: var(--accent-secondary);" viewBox="0 0 24 24">
+              <path d="M12 19l7-7 3 3-7 7-3-3zM18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5zM2 2l7.5 7.5" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            </svg>
             <span class="brand-logo-text">İMGE</span>
           </div>
         </div>
 
         <nav class="sidebar-nav">
           <button class="nav-item active" data-segment="Kitaplarım" onclick="app.navigate('Kitaplarım')">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="2" fill="none" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke="currentColor"
+                stroke-width="2" fill="none" />
+            </svg>
             <span class="nav-text">Kitaplarım</span>
           </button>
 
-          <button class="nav-item" data-segment="Yazma" onclick="app.navigate('Yazma')">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-            <span class="nav-text">Yazma</span>
+          <button class="nav-item" data-segment="Karakterler" onclick="app.navigate('Karakterler')">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <span class="nav-text">Karakterler</span>
           </button>
 
+
+
           <button class="nav-item" data-segment="Profil" onclick="app.navigate('Profil')">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none" />
+              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none" />
+            </svg>
             <span class="nav-text">Profil</span>
           </button>
 
           <button class="nav-item" data-segment="Analiz" onclick="app.openAnalyticsPanel()">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            <svg class="svg-icon" viewBox="0 0 24 24">
+              <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" fill="none" />
+            </svg>
             <span class="nav-text">Analiz</span>
           </button>
 
@@ -93,7 +126,10 @@
         <div class="sidebar-footer">
           <button class="btn-theme-toggle" onclick="app.toggleTheme()">
             <span class="theme-icon-holder" id="theme-icon-svg">
-              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+              <svg class="svg-icon" viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"
+                  fill="none" />
+              </svg>
             </span>
             <span>Karanlık / Aydınlık Mod</span>
           </button>
@@ -106,7 +142,11 @@
         <header class="top-navbar">
           <div class="left-nav">
             <button class="btn-icon" onclick="app.toggleSidebar()" title="Menüyü Genişlet/Daralt">
-              <svg class="svg-icon" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2"/><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2"/></svg>
+              <svg class="svg-icon" viewBox="0 0 24 24">
+                <line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" />
+                <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" />
+                <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" />
+              </svg>
             </button>
             <h2 class="page-title" id="current-page-title">Kitaplarım</h2>
           </div>
@@ -120,7 +160,7 @@
 
         <!-- Dynamic Content Pages Area -->
         <main class="content-area" id="content-area">
-          
+
           <!-- View: Kitaplarım Grid -->
           <div id="view-books" class="view-page active">
             <div class="books-grid" id="books-grid-container">
@@ -133,24 +173,48 @@
             <div class="book-workspace">
               <div class="book-workspace-nav">
                 <button class="book-tab-btn active" data-tab="editor" onclick="app.switchBookTab('editor')">
-                  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                  <svg class="svg-icon" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor"
+                      stroke-width="2" fill="none" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor"
+                      stroke-width="2" fill="none" />
+                  </svg>
                   <span>Yazma</span>
                 </button>
                 <button class="book-tab-btn" data-tab="relations" onclick="app.switchBookTab('relations')">
-                  <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2" fill="none"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2"/></svg>
+                  <svg class="svg-icon" viewBox="0 0 24 24">
+                    <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2" fill="none" />
+                    <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none" />
+                    <circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2" fill="none" />
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" stroke-width="2" />
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" stroke-width="2" />
+                  </svg>
                   <span>İlişki Haritası</span>
                 </button>
                 <button class="book-tab-btn" data-tab="characters" onclick="app.switchBookTab('characters')">
-                  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" fill="none"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" fill="none"/><circle cx="12" cy="14" r="2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-                  <span>Karakterler</span>
+                  <svg class="svg-icon" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor"
+                      stroke-width="2" fill="none" />
+                    <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" fill="none" />
+                    <circle cx="12" cy="14" r="2" stroke="currentColor" stroke-width="2" fill="none" />
+                  </svg>
+                  <span>Kişiler</span>
                 </button>
                 <button class="book-tab-btn" data-tab="settings" onclick="app.switchBookTab('settings')">
-                  <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                  <svg class="svg-icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none" />
+                    <path
+                      d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                      stroke="currentColor" stroke-width="2" fill="none" />
+                  </svg>
                   <span>Ayarlar</span>
                 </button>
                 <div style="margin-left: auto;">
                   <button class="tool-btn" onclick="app.closeBookWorkspace()">
-                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2"/><polyline points="12 19 5 12 12 5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                      <line x1="19" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" />
+                      <polyline points="12 19 5 12 12 5" stroke="currentColor" stroke-width="2" fill="none" />
+                    </svg>
                     <span>Kitaplarıma Dön</span>
                   </button>
                 </div>
@@ -166,23 +230,33 @@
                       <span style="color: var(--border-color)">|</span>
                       <button class="tool-btn" onclick="app.formatText('bold')" title="Kalın"><b>B</b></button>
                       <button class="tool-btn" onclick="app.formatText('italic')" title="İtalik"><i>I</i></button>
-                      <button class="tool-btn" onclick="app.formatText('underline')" title="Altı Çizili"><u>U</u></button>
+                      <button class="tool-btn" onclick="app.formatText('underline')"
+                        title="Altı Çizili"><u>U</u></button>
                       <span style="color: var(--border-color)">|</span>
-                      <button class="tool-btn" onclick="app.formatText('insertUnorderedList')" title="Madde İşaretleri">• Liste</button>
-                      <button class="tool-btn" onclick="app.formatText('insertOrderedList')" title="Numaralandırma">1. Liste</button>
+                      <button class="tool-btn" onclick="app.formatText('insertUnorderedList')"
+                        title="Madde İşaretleri">• Liste</button>
+                      <button class="tool-btn" onclick="app.formatText('insertOrderedList')" title="Numaralandırma">1.
+                        Liste</button>
                       <span style="color: var(--border-color)">|</span>
                       <button class="tool-btn" onclick="app.formatText('justifyLeft')" title="Sola Hizala">Sola</button>
                       <button class="tool-btn" onclick="app.formatText('justifyCenter')" title="Ortala">Ortala</button>
-                      <button class="tool-btn" onclick="app.formatText('justifyRight')" title="Sağa Hizala">Sağa</button>
+                      <button class="tool-btn" onclick="app.formatText('justifyRight')"
+                        title="Sağa Hizala">Sağa</button>
                       <span style="color: var(--border-color)">|</span>
-                      <input type="color" class="tool-color-picker" onchange="app.formatText('foreColor', this.value)" title="Metin Rengi" style="width:28px; height:28px; padding:0; border:none; cursor:pointer; background:transparent;">
+                      <input type="color" class="tool-color-picker" onchange="app.formatText('foreColor', this.value)"
+                        title="Metin Rengi"
+                        style="width:28px; height:28px; padding:0; border:none; cursor:pointer; background:transparent;">
                       <span style="color: var(--border-color)">|</span>
                       <button class="tool-btn" onclick="app.findInBook()">Bul</button>
                       <button class="tool-btn" id="btn-spellcheck" onclick="app.checkGrammar()">Yazım Denetimi</button>
                       <button class="tool-btn" onclick="app.toggleFocusMode()">Odak Modu</button>
                       <div class="export-dropdown-wrapper">
                         <button class="tool-btn" onclick="app.toggleExportMenu(event)">
-                          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          <svg class="svg-icon" viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+                              stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>
                           İndir ▾
                         </button>
                         <div class="export-dropdown-menu" id="export-dropdown-menu">
@@ -216,19 +290,24 @@
                           </button>
                         </div>
                       </div>
-                      <span style="margin-left: auto; color: var(--accent-secondary); font-weight: 600; font-size: 0.85rem;" id="editor-autosave-status">Otomatik Kaydedildi</span>
+                      <span
+                        style="margin-left: auto; color: var(--accent-secondary); font-weight: 600; font-size: 0.85rem;"
+                        id="editor-autosave-status">Otomatik Kaydedildi</span>
                     </div>
 
                     <div class="editor-body-wrapper" id="editor-body-wrapper">
                       <div class="editor-pages-container" id="editor-pages-container">
                         <div class="paper-sheet" data-page="1">
-                          <div class="paper-sheet-header" ondblclick="app.editHeaderFooter(this, 'header')" contenteditable="false">
+                          <div class="paper-sheet-header" ondblclick="app.editHeaderFooter(this, 'header')"
+                            contenteditable="false">
                             <span class="header-text">Üst Bilgi Ekle (Çift Tıkla)</span>
                           </div>
-                          <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true" data-page-index="0" oninput="app.onEditorInput()">
+                          <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true"
+                            data-page-index="0" oninput="app.onEditorInput()">
                             <p>Gecenin karanlığı şehri kapladığında...</p>
                           </div>
-                          <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')" contenteditable="false">
+                          <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')"
+                            contenteditable="false">
                             <span class="footer-text">İMGE Taslak</span>
                             <span class="page-number-display">Sayfa 1</span>
                           </div>
@@ -246,7 +325,8 @@
                         <button class="zoom-btn" onclick="app.adjustEditorZoom(-0.1)" title="Uzaklaştır">-</button>
                         <span id="editor-zoom-display" class="zoom-display">100%</span>
                         <button class="zoom-btn" onclick="app.adjustEditorZoom(0.1)" title="Yakınlaştır">+</button>
-                        <button class="zoom-btn reset-btn" onclick="app.resetEditorZoom()" title="Sıfırla">Sıfırla</button>
+                        <button class="zoom-btn reset-btn" onclick="app.resetEditorZoom()"
+                          title="Sıfırla">Sıfırla</button>
                       </div>
                     </div>
                   </div>
@@ -255,18 +335,25 @@
                 <!-- Sub-Tab 2: İlişki Haritası (Large Panning Canvas & Zoom) -->
                 <div id="subtab-corkboard" class="tab-pane" style="display: none;">
                   <div class="corkboard-container" id="corkboard-container">
-                    
+
                     <!-- Glassmorphic Top Toolbar -->
                     <div class="corkboard-toolbar">
                       <span style="font-weight: 700; font-family: var(--font-heading);">İlişki Haritası:</span>
-                      <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem;" onclick="app.openCreatePersonModal()">+ Kişi Ekle</button>
-                      <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem; background: var(--accent-secondary);" onclick="app.openCreateRelationModal()">İlişki Bağla</button>
+                      <button class="btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.85rem;"
+                        onclick="app.openCreatePersonModal()">+ Kişi Ekle</button>
+                      <button class="btn-primary"
+                        style="padding: 0.35rem 0.85rem; font-size: 0.85rem; background: transparent; color: var(--accent-secondary); border: 1px solid var(--accent-secondary);"
+                        onclick="app.openCreateRelationModal()">İlişki Bağla</button>
                       <span style="border-right: 1px solid rgba(255,255,255,0.2); height: 18px;"></span>
                       <span>Filtre:</span>
-                      <span class="filter-badge active" data-rel="Aile" onclick="app.toggleRelationFilter('Aile', this)">Aile</span>
-                      <span class="filter-badge active" data-rel="Arkadaşlık" onclick="app.toggleRelationFilter('Arkadaşlık', this)">Arkadaşlık</span>
-                      <span class="filter-badge active" data-rel="Aşk" onclick="app.toggleRelationFilter('Aşk', this)">Aşk</span>
-                      <span class="filter-badge active" data-rel="Düşmanlık" onclick="app.toggleRelationFilter('Düşmanlık', this)">Düşmanlık</span>
+                      <span class="filter-badge active" data-rel="Aile"
+                        onclick="app.toggleRelationFilter('Aile', this)">Aile</span>
+                      <span class="filter-badge active" data-rel="Arkadaşlık"
+                        onclick="app.toggleRelationFilter('Arkadaşlık', this)">Arkadaşlık</span>
+                      <span class="filter-badge active" data-rel="Aşk"
+                        onclick="app.toggleRelationFilter('Aşk', this)">Aşk</span>
+                      <span class="filter-badge active" data-rel="Düşmanlık"
+                        onclick="app.toggleRelationFilter('Düşmanlık', this)">Düşmanlık</span>
                     </div>
 
                     <!-- Large Panning Canvas Viewport -->
@@ -280,7 +367,8 @@
                       <button class="zoom-btn" onclick="app.adjustZoom(-0.1)" title="Uzaklaştır">-</button>
                       <span id="zoom-value-display" class="zoom-display">100%</span>
                       <button class="zoom-btn" onclick="app.adjustZoom(0.1)" title="Yakınlaştır">+</button>
-                      <button class="zoom-btn reset-btn" onclick="app.resetZoomAndPan()" title="Sıfırla">Sıfırla</button>
+                      <button class="zoom-btn reset-btn" onclick="app.resetZoomAndPan()"
+                        title="Sıfırla">Sıfırla</button>
                     </div>
 
                   </div>
@@ -288,7 +376,8 @@
 
                 <!-- Sub-Tab 3: Karakterler -->
                 <div id="subtab-characters" class="tab-pane" style="display: none; padding: 2rem;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                  <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                     <h3 style="font-family: var(--font-heading); font-size: 1.3rem;">Kitap Karakterleri</h3>
                     <button class="btn-primary" onclick="app.openCreatePersonModal()">+ Yeni Karakter Ekle</button>
                   </div>
@@ -310,15 +399,21 @@
                     <div class="form-group" style="margin-bottom: 1.5rem;">
                       <label style="font-weight: 600;">Kapak Görseli Değiştir (Resim Dosyası Yükle)</label>
                       <div class="file-drop-zone" onclick="document.getElementById('setting-book-cover-file').click()">
-                        <svg class="svg-icon" style="width: 2rem; height: 2rem; color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                        <svg class="svg-icon" style="width: 2rem; height: 2rem; color: var(--accent-secondary);"
+                          viewBox="0 0 24 24">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                            stroke="currentColor" stroke-width="2" fill="none" />
+                        </svg>
                         <span>Kapağı Güncellemek İçin Bir Resim Seçin</span>
-                        <input type="file" id="setting-book-cover-file" accept="image/*" style="display: none;" onchange="app.handleCoverFileSelect(event, 'setting-cover-preview', 'setting-cover-data')">
+                        <input type="file" id="setting-book-cover-file" accept="image/*" style="display: none;"
+                          onchange="app.handleCoverFileSelect(event, 'setting-cover-preview', 'setting-cover-data')">
                         <img id="setting-cover-preview" class="file-drop-preview" alt="Kapak Önizleme">
                         <input type="hidden" id="setting-cover-data">
                       </div>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                      <button class="btn-primary" style="background: var(--accent-danger);" onclick="app.deleteCurrentBook()">Kitabı Sil</button>
+                      <button class="btn-primary" style="background: var(--accent-danger);"
+                        onclick="app.deleteCurrentBook()">Kitabı Sil</button>
                       <button class="btn-primary" onclick="app.saveBookSettings()">Değişiklikleri Kaydet</button>
                     </div>
                   </div>
@@ -330,9 +425,14 @@
 
           <!-- View: Karakterler Klasörü -->
           <div id="view-templates" class="view-page" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-              <p style="color: var(--text-secondary);">Karakter dosyaları bankası. İncelemek için karakter kartının üstüne tıklayın.</p>
-              <button class="btn-primary" onclick="app.openCreatePersonModal()">+ Yeni Karakter Oluştur</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label style="font-weight: 600; color: var(--text-secondary);">Filtre:</label>
+                <select id="templates-filter-select" class="form-control" style="min-width: 200px;" onchange="app.renderTemplatesGrid()">
+                  <option value="Tümü">Tümü</option>
+                </select>
+              </div>
+              <button class="btn-primary" onclick="app.openCreatePersonModal(true)">+ Yeni Karakter Oluştur</button>
             </div>
             <div class="templates-grid" id="templates-grid-container">
               <!-- Rendered via JS -->
@@ -359,7 +459,8 @@
               </div>
               <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="font-weight: 600;">Biyografi / Hakkımda</label>
-                <textarea id="profile-input-bio" class="form-control" rows="4">İMGE platformunda hikayeler kaleme alan tutkulu yazar.</textarea>
+                <textarea id="profile-input-bio" class="form-control"
+                  rows="4">İMGE platformunda hikayeler kaleme alan tutkulu yazar.</textarea>
               </div>
               <button class="btn-primary" onclick="app.saveProfile()">Profili Güncelle</button>
             </div>
@@ -389,11 +490,28 @@
           <textarea id="new-book-subject" class="form-control" rows="3" placeholder="Kitabın kısa konusu..."></textarea>
         </div>
         <div class="form-group">
+          <label style="font-weight: 600;">Tür / Kategori <span
+              style="font-weight: 400; color: var(--text-muted); font-size: 0.8rem;">(isteğe bağlı)</span></label>
+          <select id="new-book-genre" class="form-control">
+            <option value="">Seçilmedi</option>
+            <option value="Roman">Roman</option>
+            <option value="Kurgu Dışı">Kurgu Dışı</option>
+            <option value="Öykü / Hikaye">Hikaye / Öykü</option>
+            <option value="Şiir">Şiir</option>
+            <option value="Diğer">Diğer</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label style="font-weight: 600;">Kapak Görseli (Resim Dosyası Seçin)</label>
           <div class="file-drop-zone" onclick="document.getElementById('new-book-cover-file').click()">
-            <svg class="svg-icon" style="width: 2.2rem; height: 2.2rem; color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+            <svg class="svg-icon" style="width: 2.2rem; height: 2.2rem; color: var(--accent-secondary);"
+              viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor"
+                stroke-width="2" fill="none" />
+            </svg>
             <span id="new-book-file-label">Görsel Yüklemek İçin Tıklayın veya Dosya Sürükleyin</span>
-            <input type="file" id="new-book-cover-file" accept="image/*" style="display: none;" onchange="app.handleCoverFileSelect(event, 'new-cover-preview', 'new-cover-data')">
+            <input type="file" id="new-book-cover-file" accept="image/*" style="display: none;"
+              onchange="app.handleCoverFileSelect(event, 'new-cover-preview', 'new-cover-data')">
             <img id="new-cover-preview" class="file-drop-preview" alt="Kapak Önizleme">
             <input type="hidden" id="new-cover-data">
           </div>
@@ -415,76 +533,71 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="person-id">
-        
+
+        <div class="form-group" id="person-import-group" style="display: none; margin-bottom: 1.5rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 1rem;">
+          <label style="font-weight: 600; color: var(--accent-secondary);">Mevcut Karakterlerden Ekle</label>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <select id="person-import-select" class="form-control" style="flex: 1;">
+              <option value="">Atanmamış karakter yok</option>
+            </select>
+            <button class="btn-primary" style="background: var(--accent-secondary);" onclick="app.importPersonFromSelect()">Ekle</button>
+          </div>
+        </div>
+
         <div class="form-group">
           <label style="font-weight: 600;">Ad Soyad</label>
           <input type="text" id="person-name" class="form-control" placeholder="Ahmet Yılmaz">
         </div>
 
+        <div class="form-group" id="person-book-group" style="display: none; margin-bottom: 1rem;">
+          <label style="font-weight: 600;">Ait Olduğu Kitap</label>
+          <select id="person-book-select" class="form-control">
+            <option value="">Henüz bir kitap belirtilmemiş</option>
+          </select>
+        </div>
+
         <div style="display: flex; gap: 1rem;">
           <div class="form-group" style="flex: 1;">
-            <label style="font-weight: 600;">Rol / Görev</label>
-            <select id="person-job-select" class="form-control">
-              <option value="Dedektif">Dedektif / Araştırmacı</option>
-              <option value="Şüpheli">Baş Şüpheli</option>
-              <option value="Kurban">Kurban</option>
-              <option value="Tanık">Kilit Tanık</option>
-              <option value="İtirafçı">İtirafçı / Bilgi Kaynağı</option>
-              <option value="Sırdaş">Sırdaş / Müttefik</option>
-              <option value="Suç Ortağı">Suç Ortağı</option>
-            </select>
+            <label style="font-weight: 600;">Meslek / Görev</label>
+            <input type="text" id="person-job" class="form-control" placeholder="Dedektif, Öğretmen vb.">
           </div>
           <div class="form-group" style="flex: 1;">
-            <label style="font-weight: 600;">Yaş Grubu</label>
-            <select id="person-age-select" class="form-control">
-              <option value="Genç (18-25)">Genç (18-25)</option>
-              <option value="Yetişkin (26-45)" selected>Yetişkin (26-45)</option>
-              <option value="Orta Yaş (46-60)">Orta Yaş (46-60)</option>
-              <option value="Kıdemli (60+)">Kıdemli (60+)</option>
-            </select>
+            <label style="font-weight: 600;">Yaş</label>
+            <input type="text" id="person-age" class="form-control" placeholder="Örn: 28">
           </div>
         </div>
 
         <div style="display: flex; gap: 1rem;">
           <div class="form-group" style="flex: 1;">
             <label style="font-weight: 600;">Kişilik Yapısı & Mizaç</label>
-            <select id="person-trait-select" class="form-control">
-              <option value="Analitik & Soğukkanlı">Analitik & Soğukkanlı</option>
-              <option value="Melankolik & İçe Kapanık">Melankolik & İçe Kapanık</option>
-              <option value="Maceracı & Cesur">Maceracı & Cesur</option>
-              <option value="Gizemli & Ketum">Gizemli & Ketum</option>
-              <option value="Hırslı & Kararlı">Hırslı & Kararlı</option>
-              <option value="Manipülatif & Zeki">Manipülatif & Zeki</option>
-            </select>
+            <input type="text" id="person-trait" class="form-control" placeholder="Analitik, Cesur vb.">
           </div>
           <div class="form-group" style="flex: 1;">
             <label style="font-weight: 600;">Cinsiyet</label>
             <select id="person-gender-select" class="form-control">
               <option value="Erkek">Erkek</option>
               <option value="Kadın">Kadın</option>
+              <option value="Non-binary">Non-binary</option>
               <option value="Belirtilmemiş">Belirtilmemiş</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
-          <label style="font-weight: 600;">Renk Etiketi (Fairycore Botanik Palet)</label>
-          <select id="person-color-select" class="form-control">
-            <option value="#1b4332">Orman Yeşili (Dedektif / Ana Karakter)</option>
-            <option value="#40916c">Adaçayı Yeşili (Müttefik / Sırdaş)</option>
-            <option value="#9e2a2b">Kadife Kırmızı (Şüpheli / Tehlike)</option>
-            <option value="#b08968">Kehribar Sarısı (Tanık / Bilgi)</option>
-            <option value="#2b2d42">Gece Slate (Karanlık / Gizem)</option>
-          </select>
+          <label style="font-weight: 600;">Karakter Biyografisi</label>
+          <textarea id="person-bio" class="form-control" rows="3"
+            placeholder="Karakterin geçmişi, motivasyonu..."></textarea>
         </div>
-
         <div class="form-group">
-          <label style="font-weight: 600;">Karakter Biyografisi & Olay Notları</label>
-          <textarea id="person-bio" class="form-control" rows="3" placeholder="Karakterin geçmişi, motivasyonu ve vakadaki konumu..."></textarea>
+          <label style="font-weight: 600;">Yazar Notu</label>
+          <textarea id="person-author-note" class="form-control" rows="2"
+            placeholder="Yazarın bu karakter hakkındaki özel notları..."></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="tool-btn danger" id="btn-delete-person" style="display: none; margin-right: auto; color: #e63946; border-color: rgba(230,57,70,0.3);" onclick="app.deletePersonFromModal()">Kişiyi Sil</button>
+        <button class="tool-btn danger" id="btn-delete-person"
+          style="display: none; margin-right: auto; color: #e63946; border-color: rgba(230,57,70,0.3);"
+          onclick="app.deletePersonFromModal()">Kişiyi Sil</button>
         <button class="tool-btn" onclick="app.closeModal('modal-person')">İptal</button>
         <button class="btn-primary" onclick="app.savePerson()">Kaydet</button>
       </div>
@@ -492,17 +605,20 @@
   </div>
 
   <!-- MODAL: Karakter Dosyası Sheet -->
-  <div class="modal-overlay" id="modal-dossier-sheet">
-    <div class="modal-card" style="max-width: 600px; background: transparent; border: none; box-shadow: none;">
+  <div class="modal-overlay" id="modal-dossier-sheet"
+    onclick="if(event.target===this) app.closeModal('modal-dossier-sheet')">
+    <div class="modal-card" style="max-width: 640px; background: transparent; border: none; box-shadow: none;">
       <div class="dossier-sheet">
         <div class="dossier-clip"></div>
-        
+
         <div class="dossier-header">
           <div>
-            <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-primary);">İMGE Karakter Dosyası</span>
-            <h2 id="dossier-name" style="font-family: var(--font-heading); font-size: 1.6rem; margin-top: 0.2rem;">-</h2>
+            <span
+              style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--accent-primary);">İMGE
+              Karakter Dosyası</span>
+            <h2 id="dossier-name" style="font-family: var(--font-heading); font-size: 1.6rem; margin-top: 0.2rem;">-
+            </h2>
           </div>
-          <div class="dossier-stamp">GİZLİ / POLİSİYE DOKÜMAN</div>
         </div>
 
         <div class="dossier-section-title">Temel Özellikler & Profil</div>
@@ -526,10 +642,18 @@
           </div>
         </div>
 
-        <div class="dossier-section-title">Detaylı Biyografi & Olay Notları</div>
-        <p id="dossier-bio" style="font-family: var(--font-editor); font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem; background: rgba(0,0,0,0.03); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--accent-primary);"></p>
+        <div class="dossier-section-title">Biyografi</div>
+        <p id="dossier-bio"
+          style="font-family: var(--font-editor); font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem; background: rgba(0,0,0,0.03); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--accent-primary); min-height: 60px;">
+        </p>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--papyrus-border); padding-top: 1rem;">
+        <div class="dossier-section-title">Yazar Notu</div>
+        <p id="dossier-author-note"
+          style="font-family: var(--font-editor); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1.5rem; background: rgba(0,0,0,0.03); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--accent-secondary); min-height: 40px; font-style: italic;">
+        </p>
+
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--papyrus-border); padding-top: 1rem;">
           <span style="font-size: 0.75rem; color: #655b4b;" id="dossier-book-tag">Ait Olduğu Kitap: -</span>
           <div style="display: flex; gap: 0.5rem;">
             <button class="tool-btn" id="btn-edit-dossier" onclick="app.editPersonFromDossier()">Düzenle / Sil</button>
@@ -567,7 +691,9 @@
         </div>
         <div style="margin-top: 1.5rem;">
           <label style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Mevcut Bağlantılar</label>
-          <div id="existing-relations-list" style="max-height: 140px; overflow-y: auto; background: var(--bg-hover); border-radius: var(--radius-sm); padding: 0.5rem;"></div>
+          <div id="existing-relations-list"
+            style="max-height: 140px; overflow-y: auto; background: var(--bg-hover); border-radius: var(--radius-sm); padding: 0.5rem;">
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -585,7 +711,10 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3 class="modal-title">
-          <svg class="svg-icon" style="margin-right: 0.5rem; color: var(--accent-secondary);" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          <svg class="svg-icon" style="margin-right: 0.5rem; color: var(--accent-secondary);" viewBox="0 0 24 24">
+            <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" fill="none" />
+          </svg>
           Yazım Analizi & İstatistikler
         </h3>
         <button class="btn-icon" onclick="app.closeAnalyticsPanel()">✕</button>
@@ -601,4 +730,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>

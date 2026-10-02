@@ -270,8 +270,6 @@ class ImagefictionApp {
 
     const viewMap = {
       'Kitaplarım': 'view-books',
-      'Yazma': 'view-books',
-      'İlişki Haritası': 'view-books',
       'Karakterler': 'view-templates',
       'Profil': 'view-profile'
     };
@@ -281,15 +279,7 @@ class ImagefictionApp {
       if (el) el.style.display = 'none';
     });
 
-    if (['Yazma'].includes(segmentName)) {
-      if (this.savedBooks.length > 0) {
-        const bookToOpen = (this.currentBookTitle && this.savedBooks.some(b => b.title === this.currentBookTitle))
-          ? this.currentBookTitle
-          : this.savedBooks[0].title;
-        this.openBookWorkspace(bookToOpen, 'editor');
-        return;
-      }
-    }
+
 
     const activeViewId = viewMap[segmentName] || 'view-books';
     const activeEl = document.getElementById(activeViewId);
@@ -303,6 +293,7 @@ class ImagefictionApp {
       this.renderBooksGrid();
     }
     if (segmentName === 'Profil') this.renderProfileView();
+    if (segmentName === 'Karakterler') this.renderTemplatesGrid();
   }
 
   /* ------------------------------------------------------------------------
@@ -440,6 +431,7 @@ class ImagefictionApp {
     const newBook = {
       title: title,
       subject: subjectInput.value.trim(),
+      genre: (document.getElementById('new-book-genre') || {}).value || '',
       cover: coverUrl,
       author: this.userProfile.name,
       content: `${title}\n\nHikayenize buraya yazarak başlayın...`
@@ -1882,16 +1874,40 @@ class ImagefictionApp {
   renderTemplatesGrid() {
     const container = document.getElementById('templates-grid-container');
     if (!container) return;
+    const filterSelect = document.getElementById('templates-filter-select');
+    
+    // Sadece ilk seferde veya listeye yeni kitap eklendiğinde select'i güncelle:
+    // Alfabetik sıra:
+    const sortedBooks = [...this.savedBooks].sort((a,b) => a.title.localeCompare(b.title));
+    const currentFilter = filterSelect ? filterSelect.value : 'Tümü';
+    
+    if (filterSelect) {
+      let optionsHtml = '<option value="Tümü">Tümü</option>';
+      sortedBooks.forEach(b => {
+        const titleEscaped = this.escapeHtml(b.title);
+        optionsHtml += `<option value="${titleEscaped}" ${currentFilter === titleEscaped ? 'selected' : ''}>${titleEscaped}</option>`;
+      });
+      filterSelect.innerHTML = optionsHtml;
+    }
+
+    const activeFilter = filterSelect ? filterSelect.value : 'Tümü';
 
     let html = '';
-    this.bookPersons.forEach(person => {
+    
+    let filteredPersons = this.bookPersons;
+    if (activeFilter !== 'Tümü') {
+      filteredPersons = this.bookPersons.filter(p => p.book_title === activeFilter);
+    }
+    
+    filteredPersons.forEach(person => {
+      const bookDisplay = person.book_title ? `Kitap: ${this.escapeHtml(person.book_title)}` : 'Henüz bir kitap belirtilmemiş';
       html += `
         <div class="template-card" onclick="app.openDossierSheetModal('${person.id}')">
           <span class="template-badge" style="background-color: ${person.color || '#1b4332'};">${this.escapeHtml(person.job || 'Kişi')}</span>
           <h4 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-primary);">${this.escapeHtml(person.name)}</h4>
           <p style="font-size: 0.85rem; color: var(--text-secondary);">${this.escapeHtml(person.trait || '')}</p>
           <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: auto; display: flex; justify-content: space-between;">
-            <span>Kitap: ${this.escapeHtml(person.book_title)}</span>
+            <span>${bookDisplay}</span>
             <span>Detayları Gör →</span>
           </div>
         </div>
@@ -1940,6 +1956,7 @@ class ImagefictionApp {
     document.getElementById('dossier-trait').textContent = person.trait || '-';
     document.getElementById('dossier-gender').textContent = person.gender || '-';
     document.getElementById('dossier-bio').textContent = person.bio || 'Biyografi bilgisi girilmemiş.';
+    document.getElementById('dossier-author-note').textContent = person.authorNote || 'Yazar notu girilmemiş.';
     document.getElementById('dossier-book-tag').textContent = `Ait Olduğu Kitap: ${person.book_title}`;
     document.getElementById('modal-dossier-sheet').dataset.personId = personId;
 
@@ -1957,16 +1974,52 @@ class ImagefictionApp {
     }
   }
 
-  openCreatePersonModal() {
-    document.getElementById('modal-person-title').textContent = 'İlişki Haritasına Kişi Ekle';
+  openCreatePersonModal(isGlobal = false) {
+    document.getElementById('modal-person-title').textContent = isGlobal ? 'Yeni Karakter Oluştur' : 'İlişki Haritasına Kişi Ekle';
     document.getElementById('person-id').value = '';
     document.getElementById('person-name').value = '';
-    document.getElementById('person-job-select').value = 'Dedektif';
-    document.getElementById('person-age-select').value = 'Yetişkin (26-45)';
-    document.getElementById('person-trait-select').value = 'Analitik & Soğukkanlı';
+    document.getElementById('person-job').value = '';
+    document.getElementById('person-age').value = '';
+    document.getElementById('person-trait').value = '';
     document.getElementById('person-gender-select').value = 'Erkek';
-    document.getElementById('person-color-select').value = '#1b4332';
     document.getElementById('person-bio').value = '';
+    document.getElementById('person-author-note').value = '';
+
+    const bookGroup = document.getElementById('person-book-group');
+    const bookSelect = document.getElementById('person-book-select');
+    const importGroup = document.getElementById('person-import-group');
+    const importSelect = document.getElementById('person-import-select');
+
+    let optionsHtml = '<option value="">Henüz bir kitap belirtilmemiş</option>';
+    this.savedBooks.forEach(b => {
+      optionsHtml += `<option value="${this.escapeHtml(b.title)}">${this.escapeHtml(b.title)}</option>`;
+    });
+    if (bookSelect) bookSelect.innerHTML = optionsHtml;
+
+    if (isGlobal) {
+      if (bookGroup) bookGroup.style.display = 'block';
+      if (bookSelect) bookSelect.value = '';
+      if (importGroup) importGroup.style.display = 'none';
+    } else {
+      if (bookGroup) bookGroup.style.display = 'none';
+      if (bookSelect) bookSelect.value = this.currentBookTitle || '';
+      
+      if (importGroup && importSelect) {
+        importGroup.style.display = 'block';
+        const unassigned = this.bookPersons.filter(p => !p.book_title);
+        if (unassigned.length === 0) {
+          importSelect.innerHTML = '<option value="">Atanmamış karakter yok</option>';
+          importSelect.disabled = true;
+        } else {
+          let importHtml = '<option value="">Karakter Seçin...</option>';
+          unassigned.forEach(p => {
+            importHtml += `<option value="${p.id}">${this.escapeHtml(p.name)} (${this.escapeHtml(p.job || 'Kişi')})</option>`;
+          });
+          importSelect.innerHTML = importHtml;
+          importSelect.disabled = false;
+        }
+      }
+    }
 
     const btnDelete = document.getElementById('btn-delete-person');
     if (btnDelete) btnDelete.style.display = 'none';
@@ -1978,12 +2031,26 @@ class ImagefictionApp {
     document.getElementById('modal-person-title').textContent = 'Kişi Detaylarını Düzenle';
     document.getElementById('person-id').value = person.id;
     document.getElementById('person-name').value = person.name;
-    document.getElementById('person-job-select').value = person.job || 'Dedektif';
-    document.getElementById('person-age-select').value = person.age || 'Yetişkin (26-45)';
-    document.getElementById('person-trait-select').value = person.trait || 'Analitik & Soğukkanlı';
+    document.getElementById('person-job').value = person.job || '';
+    document.getElementById('person-age').value = person.age || '';
+    document.getElementById('person-trait').value = person.trait || '';
     document.getElementById('person-gender-select').value = person.gender || 'Erkek';
-    document.getElementById('person-color-select').value = person.color || '#1b4332';
     document.getElementById('person-bio').value = person.bio || '';
+    document.getElementById('person-author-note').value = person.authorNote || '';
+
+    const bookGroup = document.getElementById('person-book-group');
+    const bookSelect = document.getElementById('person-book-select');
+    const importGroup = document.getElementById('person-import-group');
+    
+    let optionsHtml = '<option value="">Henüz bir kitap belirtilmemiş</option>';
+    this.savedBooks.forEach(b => {
+      optionsHtml += `<option value="${this.escapeHtml(b.title)}">${this.escapeHtml(b.title)}</option>`;
+    });
+    if (bookSelect) bookSelect.innerHTML = optionsHtml;
+    
+    if (bookGroup) bookGroup.style.display = 'block';
+    if (bookSelect) bookSelect.value = person.book_title || '';
+    if (importGroup) importGroup.style.display = 'none';
 
     const btnDelete = document.getElementById('btn-delete-person');
     if (btnDelete) btnDelete.style.display = 'inline-block';
@@ -2021,14 +2088,16 @@ class ImagefictionApp {
     }
 
     this.playPopSound();
-    const job = document.getElementById('person-job-select').value;
-    const age = document.getElementById('person-age-select').value;
-    const trait = document.getElementById('person-trait-select').value;
+    const job = document.getElementById('person-job').value.trim();
+    const age = document.getElementById('person-age').value.trim();
+    const trait = document.getElementById('person-trait').value.trim();
     const gender = document.getElementById('person-gender-select').value;
-    const color = document.getElementById('person-color-select').value;
+    const color = '#1b4332'; // Default color for backward compatibility in corkboard
     const bio = document.getElementById('person-bio').value.trim();
+    const authorNote = document.getElementById('person-author-note').value.trim();
 
-    const bookTitle = this.currentBookTitle || (this.savedBooks[0] ? this.savedBooks[0].title : 'Vaka');
+    const bookSelectElement = document.getElementById('person-book-select');
+    const bookTitle = bookSelectElement ? bookSelectElement.value : (this.currentBookTitle || '');
 
     if (id) {
       const p = this.bookPersons.find(item => item.id === id);
@@ -2040,6 +2109,8 @@ class ImagefictionApp {
         p.gender = gender;
         p.color = color;
         p.bio = bio;
+        p.authorNote = authorNote;
+        p.book_title = bookTitle;
       }
     } else {
       const newP = {
@@ -2052,6 +2123,7 @@ class ImagefictionApp {
         gender: gender,
         color: color,
         bio: bio,
+        authorNote: authorNote,
         x: 240 + Math.random() * 300,
         y: 200 + Math.random() * 200
       };
@@ -2065,7 +2137,31 @@ class ImagefictionApp {
       this.renderCorkboard();
     }
     this.renderTemplatesGrid();
+    this.renderBookCharactersGrid();
     this.showToast("Kişi bilgileri kaydedildi.");
+  }
+
+  importPersonFromSelect() {
+    if (!this.currentBookTitle) return;
+    const importSelect = document.getElementById('person-import-select');
+    if (!importSelect || !importSelect.value) {
+      this.showToast("Lütfen eklenecek karakteri seçin.");
+      return;
+    }
+    
+    const personId = importSelect.value;
+    const p = this.bookPersons.find(x => x.id === personId);
+    if (p) {
+      p.book_title = this.currentBookTitle;
+      this.saveState();
+      this.closeModal('modal-person');
+      this.renderBookCharactersGrid();
+      this.renderTemplatesGrid();
+      if (this.currentBookTab === 'corkboard' || this.currentBookTab === 'relations') {
+        this.renderCorkboard();
+      }
+      this.showToast(`${p.name} başarıyla bu kitaba eklendi.`);
+    }
   }
 
   openCreateRelationModal() {
@@ -2173,12 +2269,19 @@ class ImagefictionApp {
     this.userProfile.email = email;
     this.userProfile.bio = bio;
 
+    if (this.savedBooks && this.savedBooks.length > 0) {
+      this.savedBooks.forEach(book => {
+        book.author = name;
+      });
+    }
+
     this.saveState();
 
     document.getElementById('header-user-name').textContent = name;
     document.getElementById('header-user-initial').textContent = name[0].toUpperCase();
 
     this.renderProfileView();
+    this.renderBooksGrid();
     this.showToast("Profil bilgileriniz güncellendi.");
   }
 
