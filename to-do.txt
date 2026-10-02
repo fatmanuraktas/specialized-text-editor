@@ -10,7 +10,12 @@
 ✅ sayfalar arası geçişlerde (boş sayfa dahil) silme (backspace) ve ok tuşları akıcı çalışır. Boş sayfa silindiğinde sistem otomatik olarak önceki sayfanın sonuna gider ve boş sayfayı kaldırır.
 ✅ imleç yazılmayan boş alanlarda artık rastgele sağa sola kaymaz, bulunduğu yerde sabit kalır
 ✅ sayfa sonlarında veya ortasında Enter'a basıldığında, yeni sayfaya geçen imleç artık sayfanın en altına değil tam başına (ilk satıra) konumlanıyor.
-✅ otomatik ekran kaydırma (imleç takibi) şimdilik iptal edildi, sadece imlecin satır satır hareketini görebileceksiniz.
+✅ otomatik ekran kaydırma (imleç takibi) yeniden aktifleştirildi, ekran artık imleci takip ederek sarsıntı yapmadan kayıyor.
+✅ sayfa sonlarında paragraf bölünmeleri satır bazında optimize edildi.
+✅ sayfa üst bilgi (header) ve alt bilgi (footer) eklendi, çift tıklanarak düzenlenebiliyor ve sayfalarda eşitleniyor.
+✅ editor araç çubuğuna geri al/ileri al, madde işaretleri, numaralandırma, metin rengi eklendi.
+✅ sayfa görünümü tam A4 formatına getirildi, Zoom (yakınlaştırma/uzaklaştırma) özellikleri eklendi.
+✅ sayfalar arası ok tuşlarıyla gezinme (Arrow Navigation) iyileştirildi.
 ✅ sayfa sonuna sığmayan kelimeler ("diyelim ki" örneği) artık ortadan bölünmüyor. Kelimenin tamamı sığmadığı anda bir bütün olarak tamamen alt sayfaya taşınır.
 ✅ Sayfa taşıp yeni sayfa oluştuğunda imlecin zorla "sayfa başına" gönderilmesi iptal edildi. Artık taşan kelimenin/cümlenin hemen yanından (kaldığınız yerden) devam ediyorsunuz.
 ✅ Araç çubuğuna (toolbar) "Bul" düğmesi eklendi. Kelime aratıp kolayca bulunmasını sağlar.

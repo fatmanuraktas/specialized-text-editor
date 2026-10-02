@@ -161,13 +161,21 @@
                 <div id="subtab-editor" class="tab-pane active">
                   <div class="editor-container" id="editor-container">
                     <div class="editor-toolbar">
+                      <button class="tool-btn" onclick="app.formatText('undo')" title="Geri Al (Ctrl+Z)">↶</button>
+                      <button class="tool-btn" onclick="app.formatText('redo')" title="İleri Al (Ctrl+Y)">↷</button>
+                      <span style="color: var(--border-color)">|</span>
                       <button class="tool-btn" onclick="app.formatText('bold')" title="Kalın"><b>B</b></button>
                       <button class="tool-btn" onclick="app.formatText('italic')" title="İtalik"><i>I</i></button>
                       <button class="tool-btn" onclick="app.formatText('underline')" title="Altı Çizili"><u>U</u></button>
                       <span style="color: var(--border-color)">|</span>
+                      <button class="tool-btn" onclick="app.formatText('insertUnorderedList')" title="Madde İşaretleri">• Liste</button>
+                      <button class="tool-btn" onclick="app.formatText('insertOrderedList')" title="Numaralandırma">1. Liste</button>
+                      <span style="color: var(--border-color)">|</span>
                       <button class="tool-btn" onclick="app.formatText('justifyLeft')" title="Sola Hizala">Sola</button>
                       <button class="tool-btn" onclick="app.formatText('justifyCenter')" title="Ortala">Ortala</button>
                       <button class="tool-btn" onclick="app.formatText('justifyRight')" title="Sağa Hizala">Sağa</button>
+                      <span style="color: var(--border-color)">|</span>
+                      <input type="color" class="tool-color-picker" onchange="app.formatText('foreColor', this.value)" title="Metin Rengi" style="width:28px; height:28px; padding:0; border:none; cursor:pointer; background:transparent;">
                       <span style="color: var(--border-color)">|</span>
                       <button class="tool-btn" onclick="app.findInBook()">Bul</button>
                       <button class="tool-btn" id="btn-spellcheck" onclick="app.checkGrammar()">Yazım Denetimi</button>
@@ -214,23 +222,32 @@
                     <div class="editor-body-wrapper" id="editor-body-wrapper">
                       <div class="editor-pages-container" id="editor-pages-container">
                         <div class="paper-sheet" data-page="1">
-                          <div class="paper-sheet-header">
-                            <span>Sayfa 1</span>
+                          <div class="paper-sheet-header" ondblclick="app.editHeaderFooter(this, 'header')" contenteditable="false">
+                            <span class="header-text">Üst Bilgi Ekle (Çift Tıkla)</span>
                           </div>
                           <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true" data-page-index="0" oninput="app.onEditorInput()">
                             <p>Gecenin karanlığı şehri kapladığında...</p>
                           </div>
-                          <div class="paper-sheet-footer">
-                            <span>İMGE Taslak</span>
+                          <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')" contenteditable="false">
+                            <span class="footer-text">İMGE Taslak</span>
+                            <span class="page-number-display">Sayfa 1</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     <div class="editor-statusbar">
-                      <span>Sayfa: <strong id="stat-page-count">1</strong></span>
-                      <span>Kelime Sayısı: <strong id="stat-word-count">0</strong></span>
-                      <span>Kişi Sayısı: <strong id="stat-char-count">0</strong></span>
+                      <div style="display: flex; gap: 1rem;">
+                        <span>Sayfa: <strong id="stat-page-count">1</strong></span>
+                        <span>Kelime Sayısı: <strong id="stat-word-count">0</strong></span>
+                        <span>Kişi Sayısı: <strong id="stat-char-count">0</strong></span>
+                      </div>
+                      <div class="editor-zoom-control" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button class="zoom-btn" onclick="app.adjustEditorZoom(-0.1)" title="Uzaklaştır">-</button>
+                        <span id="editor-zoom-display" class="zoom-display">100%</span>
+                        <button class="zoom-btn" onclick="app.adjustEditorZoom(0.1)" title="Yakınlaştır">+</button>
+                        <button class="zoom-btn reset-btn" onclick="app.resetEditorZoom()" title="Sıfırla">Sıfırla</button>
+                      </div>
                     </div>
                   </div>
                 </div>

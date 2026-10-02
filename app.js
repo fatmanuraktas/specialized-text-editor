@@ -19,6 +19,9 @@ class ImagefictionApp {
     this.isPanning = false;
     this.panStart = { x: 0, y: 0 };
 
+    // Editor Scale & Zoom State
+    this.editorZoomLevel = 1.0;
+
     // Caret / cursor tracking
     this.caretBlinkInterval = null;
     this.isTyping = false;
@@ -658,9 +661,9 @@ class ImagefictionApp {
     }
   }
 
-  formatText(command) {
+  formatText(command, value = null) {
     this.playClickSound();
-    document.execCommand(command, false, null);
+    document.execCommand(command, false, value);
     this.onEditorInput();
   }
 
@@ -969,12 +972,13 @@ class ImagefictionApp {
           nextSheet.className = 'paper-sheet';
           nextSheet.dataset.page = newSheetNum;
           nextSheet.innerHTML = `
-            <div class="paper-sheet-header">
-              <span>Sayfa ${newSheetNum}</span>
+            <div class="paper-sheet-header" ondblclick="app.editHeaderFooter(this, 'header')" contenteditable="false">
+              <span class="header-text">${this.escapeHtml(this.getGlobalHeaderContent())}</span>
             </div>
             <div class="paper-sheet-content" contenteditable="true" data-page-index="${sheets.length}"></div>
-            <div class="paper-sheet-footer">
-              <span>İMGE Taslak</span>
+            <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')" contenteditable="false">
+              <span class="footer-text">${this.escapeHtml(this.getGlobalFooterContent())}</span>
+              <span class="page-number-display">Sayfa ${newSheetNum}</span>
             </div>
           `;
           container.appendChild(nextSheet);
@@ -1085,8 +1089,15 @@ class ImagefictionApp {
       }
     }
 
-    // Update statusbar page count
-    const activePageCount = container.querySelectorAll('.paper-sheet').length;
+    // Update statusbar page count and page numbers
+    const finalSheets = container.querySelectorAll('.paper-sheet');
+    const activePageCount = finalSheets.length;
+    finalSheets.forEach((sheet, idx) => {
+      const pageNumEl = sheet.querySelector('.page-number-display');
+      if (pageNumEl) pageNumEl.textContent = `Sayfa ${idx + 1}`;
+      sheet.dataset.page = idx + 1;
+    });
+
     const statPage = document.getElementById('stat-page-count');
     if (statPage) statPage.textContent = `${activePageCount}`;
   }
@@ -1113,7 +1124,7 @@ class ImagefictionApp {
           sel.removeAllRanges();
           sel.addRange(newRange);
           this.updateCaretPosition();
-          this.scrollToCaretIfNeeded();
+          this.scrollToCaretIfNeeded(true);
         }
       }
     }
@@ -1137,7 +1148,7 @@ class ImagefictionApp {
           sel.removeAllRanges();
           sel.addRange(newRange);
           this.updateCaretPosition();
-          this.scrollToCaretIfNeeded();
+          this.scrollToCaretIfNeeded(true);
           
           if (e.key === 'Backspace' && pageEl.innerText.trim() === '') {
             setTimeout(() => this.handlePageOverflow(), 10);
@@ -2177,9 +2188,124 @@ class ImagefictionApp {
     }
   }
 
-  scrollToCaretIfNeeded() {
-    // Otomatik ekran kaydırma geçici olarak devre dışı bırakıldı (kullanıcı isteği)
-    return;
+  scrollToCaretIfNeeded(force = false) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    
+    // Check if user has explicitly asked to stop typing
+    if (!this.isTyping && !force) return;
+
+    try {
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      
+      // If the selection has no bounds, it might be an empty text node
+      if (rect.top === 0 && rect.bottom === 0) {
+        let node = range.startContainer;
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        if (node && node.getBoundingClientRect) {
+          const nodeRect = node.getBoundingClientRect();
+          this.scrollRectIntoView(nodeRect);
+        }
+        return;
+      }
+      
+      this.scrollRectIntoView(rect);
+    } catch (e) {
+      // Ignore
+    }
+  }
+
+  scrollRectIntoView(rect) {
+    const viewportHeight = window.innerHeight;
+    const headerOffset = 60; // top-navbar height
+    const padding = 100; // padding to keep caret from being exactly at the edge
+
+    if (rect.bottom > viewportHeight - padding) {
+      // Scroll down
+      window.scrollBy({ top: rect.bottom - viewportHeight + padding, left: 0, behavior: 'smooth' });
+    } else if (rect.top < headerOffset + padding) {
+      // Scroll up
+      window.scrollBy({ top: rect.top - headerOffset - padding, left: 0, behavior: 'smooth' });
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     EDITOR ZOOM & HEADER/FOOTER SYNC
+     ------------------------------------------------------------------------ */
+  adjustEditorZoom(delta) {
+    this.playClickSound();
+    this.editorZoomLevel = Math.max(0.5, Math.min(2.5, this.editorZoomLevel + delta));
+    this.applyEditorZoom();
+  }
+
+  resetEditorZoom() {
+    this.playClickSound();
+    this.editorZoomLevel = 1.0;
+    this.applyEditorZoom();
+  }
+
+  applyEditorZoom() {
+    const container = document.getElementById('editor-pages-container');
+    const display = document.getElementById('editor-zoom-display');
+    if (container) {
+      container.style.transform = `scale(${this.editorZoomLevel})`;
+    }
+    if (display) {
+      display.textContent = `${Math.round(this.editorZoomLevel * 100)}%`;
+    }
+  }
+
+  getGlobalHeaderContent() {
+    return this.globalHeader || "Üst Bilgi Ekle (Çift Tıkla)";
+  }
+
+  getGlobalFooterContent() {
+    return this.globalFooter || "İMGE Taslak";
+  }
+
+  editHeaderFooter(element, type) {
+    this.playClickSound();
+    element.contentEditable = "true";
+    element.focus();
+    
+    // Select all text inside
+    const range = document.createRange();
+    const sel = window.getSelection();
+    // Assuming the text is in a span inside the header/footer
+    const targetSpan = element.querySelector(type === 'header' ? '.header-text' : '.footer-text');
+    if (targetSpan) {
+      range.selectNodeContents(targetSpan);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    const onBlur = () => {
+      element.contentEditable = "false";
+      element.removeEventListener('blur', onBlur);
+      const newText = targetSpan ? targetSpan.innerText.trim() : element.innerText.trim();
+      this.syncHeaderFooter(newText, type);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        element.blur(); // Triggers onBlur
+      }
+    };
+
+    element.addEventListener('blur', onBlur);
+    element.addEventListener('keydown', onKeyDown, { once: true });
+  }
+
+  syncHeaderFooter(newText, type) {
+    if (type === 'header') {
+      this.globalHeader = newText || "Üst Bilgi";
+      document.querySelectorAll('.paper-sheet-header .header-text').forEach(el => el.textContent = this.globalHeader);
+    } else {
+      this.globalFooter = newText || "Alt Bilgi";
+      document.querySelectorAll('.paper-sheet-footer .footer-text').forEach(el => el.textContent = this.globalFooter);
+    }
   }
 
   hideCaret() {
