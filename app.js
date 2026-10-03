@@ -434,7 +434,8 @@ class ImagefictionApp {
       genre: (document.getElementById('new-book-genre') || {}).value || '',
       cover: coverUrl,
       author: this.userProfile.name,
-      content: `${title}\n\nHikayenize buraya yazarak başlayın...`
+      publisher: '',
+      content: '<p><br></p>'
     };
 
     this.savedBooks.push(newBook);
@@ -498,31 +499,55 @@ class ImagefictionApp {
 
     document.getElementById('current-page-title').textContent = `Kitap: ${bookTitle}`;
 
-    // Clean reset editor pages container to single page
+    // Clean reset editor pages container to title page + first editable page
     const pagesContainer = document.getElementById('editor-pages-container');
     if (pagesContainer) {
       pagesContainer.innerHTML = `
-        <div class="paper-sheet" data-page="1">
-          <div class="paper-sheet-header">
-            <span>Sayfa 1</span>
+        <div class="paper-sheet title-page" data-page="0" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 4rem; text-transform: uppercase;">
+          <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%;">
+            <h1 id="title-page-title" style="font-family: var(--font-heading); font-size: 3rem; margin-bottom: 2rem; color: var(--text-primary); line-height: 1.2;">${this.escapeHtml(book.title)}</h1>
+            <h3 id="title-page-author" style="font-family: var(--font-body); font-size: 1.5rem; color: var(--text-secondary);">${this.escapeHtml(book.author || 'Yazar')}</h3>
           </div>
-          <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true" data-page-index="0" oninput="app.onEditorInput()"></div>
-          <div class="paper-sheet-footer">
-            <span>İMGE Taslak</span>
+          <div id="title-page-publisher" style="font-family: var(--font-body); font-size: 1.1rem; color: var(--text-muted); margin-top: auto; min-height: 2rem;">
+            ${book.publisher ? this.escapeHtml(book.publisher) : ''}
+          </div>
+        </div>
+        <div class="paper-sheet" data-page="1">
+          <div class="paper-sheet-header" ondblclick="app.editHeaderFooter(this, 'header')" contenteditable="false">
+            <span class="header-text">${this.escapeHtml(this.getGlobalHeaderContent())}</span>
+          </div>
+          <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true" data-page-index="1" oninput="app.onEditorInput()" onclick="app.handleEditorClick(event, this)"></div>
+          <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')" contenteditable="false">
+            <span class="footer-text">${this.escapeHtml(this.getGlobalFooterContent())}</span>
+            <span class="page-number-display">Sayfa 1</span>
+          </div>
+        </div>
+        <div class="paper-sheet" data-page="2">
+          <div class="paper-sheet-header" ondblclick="app.editHeaderFooter(this, 'header')" contenteditable="false">
+            <span class="header-text">${this.escapeHtml(this.getGlobalHeaderContent())}</span>
+          </div>
+          <div class="paper-sheet-content" contenteditable="true" data-page-index="2" oninput="app.onEditorInput()" onclick="app.handleEditorClick(event, this)"></div>
+          <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')" contenteditable="false">
+            <span class="footer-text">${this.escapeHtml(this.getGlobalFooterContent())}</span>
+            <span class="page-number-display">Sayfa 2</span>
           </div>
         </div>
       `;
-      // Add keydown handler for cross-page navigation on first page
-      const firstPageContent = pagesContainer.querySelector('.paper-sheet-content');
-      if (firstPageContent) {
-        firstPageContent.addEventListener('keydown', (e) => this.handleEditorKeydown(e, firstPageContent));
-      }
+      // Add keydown handler for cross-page navigation on editable pages
+      const contents = pagesContainer.querySelectorAll('.paper-sheet-content');
+      contents.forEach(content => {
+        content.addEventListener('keydown', (e) => this.handleEditorKeydown(e, content));
+      });
     }
 
     this.setEditorText(book.content || '');
 
     document.getElementById('setting-book-title').value = book.title;
     document.getElementById('setting-book-subject').value = book.subject || '';
+    const authorEl = document.getElementById('setting-book-author');
+    if(authorEl) authorEl.value = book.author || '';
+    const publisherEl = document.getElementById('setting-book-publisher');
+    if(publisherEl) publisherEl.value = book.publisher || '';
     document.getElementById('setting-cover-data').value = book.cover || '';
 
     this.switchBookTab(targetTab);
@@ -549,8 +574,18 @@ class ImagefictionApp {
           targetEditor.focus();
           const range = document.createRange();
           const sel = window.getSelection();
-          range.selectNodeContents(targetEditor);
-          range.collapse(false);
+          const targetP = targetEditor.lastElementChild || targetEditor.lastChild;
+          if (targetP) {
+              range.selectNodeContents(targetP);
+              if (targetP.childNodes.length === 1 && targetP.firstChild.tagName === 'BR') {
+                  range.collapse(true);
+              } else {
+                  range.collapse(false);
+              }
+          } else {
+              range.selectNodeContents(targetEditor);
+              range.collapse(true);
+          }
           sel.removeAllRanges();
           sel.addRange(range);
           this.updateCaretPosition();
@@ -953,11 +988,73 @@ class ImagefictionApp {
       const pageEl = sheet.querySelector('.paper-sheet-content');
       if (!pageEl) continue;
 
+      let loopGuardUnderflow = 0;
+      let nextSheet = sheets[i + 1];
+      
+      // 1. Pull text from next page (Underflow handling)
+      if (nextSheet && pageEl.scrollHeight <= pageEl.clientHeight && pageEl.clientHeight > 0) {
+        let nextPageEl = nextSheet.querySelector('.paper-sheet-content');
+        
+        while (pageEl.scrollHeight <= pageEl.clientHeight && nextPageEl && nextPageEl.firstChild && loopGuardUnderflow < 500) {
+          loopGuardUnderflow++;
+          let firstChild = nextPageEl.firstChild;
+          
+          if (firstChild.id === 'editor-ghost-text') {
+             this.clearGhostSuggestion();
+             continue;
+          }
+          
+          // Track cursor if it's in the pulled node
+          const sel = window.getSelection();
+          let cursorOffset = 0;
+          let cursorNode = null;
+          const cursorInPulledNode = sel && sel.rangeCount > 0 && firstChild.contains(sel.getRangeAt(0).startContainer);
+          if (cursorInPulledNode) {
+              cursorNode = sel.getRangeAt(0).startContainer;
+              cursorOffset = sel.getRangeAt(0).startOffset;
+          }
+          
+          let lastP = pageEl.lastChild;
+          if (lastP && lastP.tagName === 'P' && firstChild.tagName === 'P' && firstChild.classList.contains('split-node')) {
+             // Merge the split nodes back together
+             while(firstChild.firstChild) {
+                 lastP.appendChild(firstChild.firstChild);
+             }
+             firstChild.remove();
+             lastP.classList.remove('split-node');
+             if (cursorInPulledNode && cursorNode) {
+                 pageEl.focus();
+                 const range = document.createRange();
+                 range.setStart(cursorNode, cursorOffset);
+                 range.collapse(true);
+                 sel.removeAllRanges();
+                 sel.addRange(range);
+             }
+          } else {
+             pageEl.appendChild(firstChild);
+             if (cursorInPulledNode && cursorNode) {
+                 pageEl.focus();
+                 const range = document.createRange();
+                 range.setStart(cursorNode, cursorOffset);
+                 range.collapse(true);
+                 sel.removeAllRanges();
+                 sel.addRange(range);
+             }
+          }
+          
+          // If pulling this node caused overflow, stop pulling. 
+          // The overflow logic below will binary-search and push the exact excess back.
+          if (pageEl.scrollHeight > pageEl.clientHeight) {
+             break;
+          }
+        }
+      }
+
       let loopGuard = 0;
-      // When text height exceeds page boundary, overflow into next page sheet
-      while (pageEl.scrollHeight > pageEl.clientHeight && pageEl.clientHeight > 0 && loopGuard < 200) {
+      // 2. Push text to next page (Overflow handling)
+      while (pageEl.scrollHeight > pageEl.clientHeight && pageEl.clientHeight > 0 && loopGuard < 500) {
         loopGuard++;
-        let nextSheet = sheets[i + 1];
+        nextSheet = sheets[i + 1];
         if (!nextSheet) {
           const newSheetNum = sheets.length + 1;
           nextSheet = document.createElement('div');
@@ -967,7 +1064,7 @@ class ImagefictionApp {
             <div class="paper-sheet-header" ondblclick="app.editHeaderFooter(this, 'header')" contenteditable="false">
               <span class="header-text">${this.escapeHtml(this.getGlobalHeaderContent())}</span>
             </div>
-            <div class="paper-sheet-content" contenteditable="true" data-page-index="${sheets.length}"></div>
+            <div class="paper-sheet-content" contenteditable="true" data-page-index="${sheets.length}" onclick="app.handleEditorClick(event, this)"></div>
             <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')" contenteditable="false">
               <span class="footer-text">${this.escapeHtml(this.getGlobalFooterContent())}</span>
               <span class="page-number-display">Sayfa ${newSheetNum}</span>
@@ -994,78 +1091,87 @@ class ImagefictionApp {
         const sel = window.getSelection();
         const cursorInMovedNode = sel && sel.rangeCount > 0 && lastChild.contains(sel.getRangeAt(0).startContainer);
 
-        if (lastChild.nodeType === Node.ELEMENT_NODE && lastChild.tagName === 'P' && lastChild.childNodes.length > 0) {
-            lastChild.normalize(); // Ensure contiguous text nodes are merged
+        if (lastChild.nodeType === Node.ELEMENT_NODE && lastChild.tagName === 'P') {
+            lastChild.normalize(); // Merge text nodes
             
             let nextP = nextPageEl.firstChild;
             if (!nextP || nextP.tagName !== 'P' || !nextP.classList.contains('split-node')) {
                 nextP = document.createElement('p');
                 nextP.className = 'split-node';
-                if (nextPageEl.firstChild) {
-                    nextPageEl.insertBefore(nextP, nextPageEl.firstChild);
-                } else {
-                    nextPageEl.appendChild(nextP);
-                }
+                nextPageEl.prepend(nextP);
             }
 
             const nodeToMove = lastChild.lastChild;
             if (nodeToMove) {
                 if (nodeToMove.nodeType === Node.TEXT_NODE) {
                     let text = nodeToMove.textContent;
-                    // Match the last full word (with its preceding whitespace if any) to prevent word splitting
-                    let match = text.match(/(\s+\S+|\S+)\s*$/);
-                    let splitIndex = (match && match.index > 0) ? match.index : 0;
+                    let words = text.split(/(\s+)/); // Split by whitespace keeping the whitespace
                     
-                    if (splitIndex > 0) {
-                        nodeToMove.textContent = text.substring(0, splitIndex);
-                        let splitText = document.createTextNode(text.substring(splitIndex));
-                        if (nextP.firstChild) {
-                            nextP.insertBefore(splitText, nextP.firstChild);
-                        } else {
-                            nextP.appendChild(splitText);
-                        }
+                    if (words.length <= 1) {
+                        nextP.prepend(nodeToMove);
                     } else {
-                        if (nextP.firstChild) {
-                            nextP.insertBefore(nodeToMove, nextP.firstChild);
-                        } else {
-                            nextP.appendChild(nodeToMove);
+                        // Binary search to find the exact overflow point
+                        let low = 0;
+                        let high = words.length;
+                        let best = 0;
+                        
+                        while (low <= high) {
+                            let mid = Math.floor((low + high) / 2);
+                            nodeToMove.textContent = words.slice(0, mid).join('');
+                            
+                            if (pageEl.scrollHeight > pageEl.clientHeight) {
+                                high = mid - 1; // Still overflowing
+                            } else {
+                                best = mid; // Fits, try to fit more
+                                low = mid + 1;
+                            }
+                        }
+                        
+                        let keepText = words.slice(0, best).join('');
+                        let moveText = words.slice(best).join('');
+                        
+                        nodeToMove.textContent = keepText;
+                        if (moveText) {
+                            let splitText = document.createTextNode(moveText);
+                            nextP.prepend(splitText);
+                        }
+                        
+                        if (keepText === '') {
+                            nodeToMove.remove();
                         }
                     }
                 } else {
-                    if (nextP.firstChild) {
-                        nextP.insertBefore(nodeToMove, nextP.firstChild);
-                    } else {
-                        nextP.appendChild(nodeToMove);
-                    }
+                    nextP.prepend(nodeToMove);
                 }
             }
             
             if (lastChild.childNodes.length === 0 || (lastChild.childNodes.length === 1 && lastChild.firstChild.nodeType === Node.TEXT_NODE && lastChild.firstChild.textContent === '')) {
                 lastChild.remove();
+                if (nextP && nextP.classList.contains('split-node')) {
+                    nextP.classList.remove('split-node');
+                    if (nextP.className === '') nextP.removeAttribute('class');
+                }
             }
         } else {
-            if (nextPageEl.firstChild) {
-                nextPageEl.insertBefore(lastChild, nextPageEl.firstChild);
-            } else {
-                nextPageEl.appendChild(lastChild);
-            }
+            nextPageEl.prepend(lastChild);
         }
 
         if (cursorInMovedNode) {
-          cursorMoved = true;
-          setTimeout(() => {
-            nextPageEl.focus();
-            const range = document.createRange();
-            const s = window.getSelection();
-            const targetP = nextPageEl.firstChild;
-            if (targetP) {
-                range.selectNodeContents(targetP);
-                range.collapse(false); // Go to the end of the newly pushed paragraph
-                s.removeAllRanges();
-                s.addRange(range);
-            }
-            this.updateCaretPosition();
-          }, 10);
+          nextPageEl.focus();
+          const range = document.createRange();
+          const s = window.getSelection();
+          const targetP = nextPageEl.firstChild;
+          if (targetP) {
+              range.selectNodeContents(targetP);
+              // If it's a completely empty line pushed to next page, collapse to start to keep it selectable
+              if (targetP.childNodes.length === 1 && targetP.firstChild.tagName === 'BR') {
+                  range.collapse(true);
+              } else {
+                  range.collapse(false);
+              }
+              s.removeAllRanges();
+              s.addRange(range);
+          }
         }
       }
     }
@@ -1092,6 +1198,23 @@ class ImagefictionApp {
 
     const statPage = document.getElementById('stat-page-count');
     if (statPage) statPage.textContent = `${activePageCount}`;
+  }
+
+  // Handle clicking on empty space in the editor
+  handleEditorClick(e, pageEl) {
+    if (e.target === pageEl) {
+      // User clicked directly on the page padding/empty area, not on a paragraph
+      const lastChild = pageEl.lastElementChild;
+      if (lastChild) {
+        const range = document.createRange();
+        range.selectNodeContents(lastChild);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        this.updateCaretPosition();
+      }
+    }
   }
 
   // Handle keydown in editor pages for cross-page navigation
@@ -1133,18 +1256,62 @@ class ImagefictionApp {
         const prevPage = this.getPreviousPage(pageEl);
         if (prevPage) {
           e.preventDefault();
-          prevPage.focus();
-          const newRange = document.createRange();
-          newRange.selectNodeContents(prevPage);
-          newRange.collapse(false); // Go to end of previous page
-          sel.removeAllRanges();
-          sel.addRange(newRange);
+          
+          if (e.key === 'Backspace') {
+             let p1 = prevPage.lastChild;
+             let p2 = pageEl.firstChild;
+             
+             if (p1 && p2 && p1.tagName === 'P' && p2.tagName === 'P') {
+                 if (p1.innerHTML === '<br>' || p1.innerHTML === '<br/>') {
+                     p1.innerHTML = '';
+                 }
+                 
+                 let lastNodeBeforeMerge = p1.lastChild;
+                 let mergeOffset = 0;
+                 if (lastNodeBeforeMerge && lastNodeBeforeMerge.nodeType === Node.TEXT_NODE) {
+                     mergeOffset = lastNodeBeforeMerge.length;
+                 } else if (lastNodeBeforeMerge) {
+                     mergeOffset = Array.from(p1.childNodes).indexOf(lastNodeBeforeMerge) + 1;
+                 }
+                 
+                 while(p2.firstChild) {
+                     p1.appendChild(p2.firstChild);
+                 }
+                 p2.remove();
+                 
+                 prevPage.focus();
+                 const newRange = document.createRange();
+                 
+                 if (lastNodeBeforeMerge && lastNodeBeforeMerge.nodeType === Node.TEXT_NODE) {
+                     newRange.setStart(lastNodeBeforeMerge, mergeOffset);
+                 } else {
+                     newRange.setStart(p1, mergeOffset);
+                 }
+                 
+                 newRange.collapse(true);
+                 sel.removeAllRanges();
+                 sel.addRange(newRange);
+                 
+                 this.onEditorInput();
+             } else {
+                 prevPage.focus();
+                 const newRange = document.createRange();
+                 newRange.selectNodeContents(prevPage);
+                 newRange.collapse(false);
+                 sel.removeAllRanges();
+                 sel.addRange(newRange);
+             }
+          } else {
+             prevPage.focus();
+             const newRange = document.createRange();
+             newRange.selectNodeContents(prevPage);
+             newRange.collapse(false);
+             sel.removeAllRanges();
+             sel.addRange(newRange);
+          }
+          
           this.updateCaretPosition();
           this.scrollToCaretIfNeeded(true);
-          
-          if (e.key === 'Backspace' && pageEl.innerText.trim() === '') {
-            setTimeout(() => this.handlePageOverflow(), 10);
-          }
         }
       }
     }
@@ -1154,20 +1321,56 @@ class ImagefictionApp {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return false;
     const range = sel.getRangeAt(0);
-    const testRange = document.createRange();
-    testRange.selectNodeContents(el);
-    testRange.setStart(range.endContainer, range.endOffset);
-    return testRange.toString().trim() === '';
+    
+    if (!range.collapsed) return false;
+    
+    let lastP = el.lastElementChild;
+    while (lastP && lastP.tagName !== 'P') {
+        lastP = lastP.previousElementSibling;
+    }
+    
+    if (!lastP) return true;
+    
+    if (!lastP.contains(range.endContainer) && range.endContainer !== lastP) {
+        return false;
+    }
+    
+    if (range.endContainer.nodeType === Node.TEXT_NODE) {
+        const pRange = document.createRange();
+        pRange.selectNodeContents(lastP);
+        pRange.setStart(range.endContainer, range.endOffset);
+        return pRange.toString().length === 0;
+    } else {
+        return range.endOffset === range.endContainer.childNodes.length;
+    }
   }
 
   isCursorAtStart(el) {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return false;
     const range = sel.getRangeAt(0);
-    const testRange = document.createRange();
-    testRange.selectNodeContents(el);
-    testRange.setEnd(range.startContainer, range.startOffset);
-    return testRange.toString().trim() === '';
+    
+    if (!range.collapsed) return false;
+    
+    let firstP = el.firstElementChild;
+    while (firstP && firstP.tagName !== 'P') {
+        firstP = firstP.nextElementSibling;
+    }
+    
+    if (!firstP) return true;
+    
+    if (!firstP.contains(range.startContainer) && range.startContainer !== firstP) {
+        return false;
+    }
+    
+    if (range.startContainer.nodeType === Node.TEXT_NODE) {
+        const pRange = document.createRange();
+        pRange.selectNodeContents(firstP);
+        pRange.setEnd(range.startContainer, range.startOffset);
+        return pRange.toString().length === 0;
+    } else {
+        return range.startOffset === 0;
+    }
   }
 
   getNextPage(currentPageEl) {
@@ -1306,7 +1509,15 @@ class ImagefictionApp {
     const htmlContent = book.content || '';
     const temp = document.createElement('div');
     temp.innerHTML = htmlContent;
-    const plainText = temp.innerText || temp.textContent || '';
+    let plainText = temp.innerText || temp.textContent || '';
+    
+    // Prepend title page text
+    const titleText = book.title.toUpperCase();
+    const authorText = (book.author || 'Yazar').toUpperCase();
+    const publisherText = (book.publisher || '').toUpperCase();
+    
+    const titlePageText = `${titleText}\n${authorText}\n${publisherText}\n\n`;
+    plainText = titlePageText + plainText;
 
     const blob = new Blob([plainText], { type: 'text/plain;charset=utf-8' });
     this.downloadBlob(blob, `${book.title}.txt`);
@@ -1343,9 +1554,14 @@ class ImagefictionApp {
   </style>
 </head>
 <body>
-  <h1>${this.escapeHtml(book.title)}</h1>
-  <p class="meta">Yazar: ${this.escapeHtml(book.author || 'Yazar')} — İMGE ile dışa aktarıldı</p>
-  <div>${htmlContent}</div>
+  <div style="height: 800px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; text-transform: uppercase;">
+    <h1 style="border: none; font-size: 3rem;">${this.escapeHtml(book.title)}</h1>
+    <p style="font-size: 1.5rem; color: #555;">${this.escapeHtml(book.author || 'Yazar')}</p>
+    <p style="margin-top: auto; color: #777;">${book.publisher ? this.escapeHtml(book.publisher) : ''}</p>
+  </div>
+  <div style="page-break-before: always;">
+    ${htmlContent}
+  </div>
 </body>
 </html>`;
 
@@ -1391,8 +1607,12 @@ class ImagefictionApp {
         </style>
       </head>
       <body>
-        <h1>${this.escapeHtml(book.title)}</h1>
-        <p class="meta">Yazar: ${this.escapeHtml(book.author || 'Yazar')}</p>
+        <div style="text-align: center; padding-top: 200pt; text-transform: uppercase;">
+          <h1 style="border: none; font-size: 32pt; margin-bottom: 24pt;">${this.escapeHtml(book.title)}</h1>
+          <p style="font-size: 18pt; color: #555;">${this.escapeHtml(book.author || 'Yazar')}</p>
+          <p style="margin-top: 100pt; color: #777;">${book.publisher ? this.escapeHtml(book.publisher) : ''}</p>
+        </div>
+        <br clear="all" style="page-break-before:always" />
         <div>${htmlContent}</div>
       </body>
       </html>`;
@@ -1404,131 +1624,86 @@ class ImagefictionApp {
     this.showToast("Metin .doc (Word) olarak indirildi.");
   }
 
-  /* -- PDF Export (Tarayıcı Yazdırma Motoru) -- */
+  /* -- PDF Export -- */
   exportAsPDF(book) {
-    const htmlContent = book.content || '';
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      this.showToast("Açılır pencere engellendi. Lütfen tarayıcınızda izin verin.");
+    if (!window.html2pdf) {
+      this.showToast("PDF kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edip sayfayı yenileyin.");
       return;
     }
 
-    printWindow.document.write(`<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>${this.escapeHtml(book.title)} — PDF</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 25mm 20mm 20mm 20mm;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Georgia', 'Times New Roman', 'Noto Serif', serif;
-      font-size: 12pt;
-      line-height: 1.8;
-      color: #2b2d42;
-      background: #fff;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .pdf-container {
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-    .pdf-title {
-      font-size: 24pt;
-      font-weight: 700;
-      color: #1b4332;
-      margin-bottom: 0.3rem;
-      letter-spacing: -0.5px;
-    }
-    .pdf-author {
-      font-size: 10pt;
-      color: #888;
-      margin-bottom: 0.8rem;
-    }
-    .pdf-divider {
-      border: none;
-      border-top: 2px solid #40916c;
-      margin-bottom: 1.5rem;
-    }
-    .pdf-content p {
-      margin-bottom: 0.8rem;
-      text-indent: 1.5rem;
-      text-align: justify;
-      orphans: 3;
-      widows: 3;
-    }
-    .pdf-content p:first-child {
-      text-indent: 0;
-    }
-    .pdf-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-size: 8pt;
-      color: #aaa;
-      padding: 8px 0;
-      border-top: 1px solid #e0e0e0;
-    }
-    @media screen {
-      body { background: #f5f5f5; padding: 2rem; }
-      .pdf-container {
-        background: #fff;
-        box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-        border-radius: 8px;
-        padding: 3rem;
-        max-width: 800px;
-      }
-      .pdf-print-hint {
-        text-align: center;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        background: #e8f5e9;
-        border-radius: 8px;
-        font-family: sans-serif;
-        font-size: 10pt;
-        color: #2e7d32;
-      }
-      .pdf-print-hint strong { display: block; margin-bottom: 4px; }
-    }
-    @media print {
-      .pdf-print-hint { display: none !important; }
-      .pdf-container { padding: 0; box-shadow: none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="pdf-container">
-    <div class="pdf-print-hint">
-      <strong>📄 PDF olarak kaydetmek için:</strong>
-      Yazdır penceresinde hedef olarak "PDF olarak kaydet" seçeneğini seçin.
-    </div>
-    <h1 class="pdf-title">${this.escapeHtml(book.title)}</h1>
-    <p class="pdf-author">Yazar: ${this.escapeHtml(book.author || 'Yazar')}</p>
-    <hr class="pdf-divider">
-    <div class="pdf-content">${htmlContent}</div>
-    <div class="pdf-footer">İMGE — Dijital Yazarlık Platformu</div>
-  </div>
-  <script>
-    window.onload = function() {
-      setTimeout(function() { window.print(); }, 400);
+    this.showToast("PDF hazırlanıyor, lütfen bekleyin...");
+    const htmlContent = book.content || '';
+    
+    const element = document.createElement('div');
+    const publisherHtml = book.publisher ? `<div style="text-align: center; margin-top: auto; padding-top: 100px; font-size: 11pt; color: #666;">${this.escapeHtml(book.publisher)}</div>` : '';
+    
+    element.innerHTML = `
+      <div style="font-family: 'Georgia', 'Times New Roman', serif; color: #2b2d42; padding: 1rem;">
+        <!-- Title Page -->
+        <div style="height: 900px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; text-transform: uppercase;">
+          <h1 style="font-size: 32pt; font-weight: 700; color: #1b4332; margin-bottom: 2rem;">${this.escapeHtml(book.title)}</h1>
+          <h2 style="font-size: 18pt; color: #555;">${this.escapeHtml(book.author || 'Yazar')}</h2>
+          ${publisherHtml}
+        </div>
+        <div class="html2pdf__page-break"></div>
+        <!-- Content -->
+        <div style="font-size: 12pt; line-height: 1.8; text-align: justify; text-indent: 1.5rem;">
+          ${htmlContent.replace(/<p>/g, '<p style="margin-bottom: 0.8rem;">')}
+        </div>
+      </div>
+    `;
+
+    const opt = {
+      margin:       0.5,
+      filename:     `${book.title}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
-  <\/script>
-</body>
-</html>`);
-    printWindow.document.close();
-    this.showToast('PDF yazdırma penceresi açıldı. "PDF olarak kaydet" seçeneğini kullanın.');
+
+    html2pdf().set(opt).from(element).outputPdf('blob').then(blob => {
+      this.downloadBlob(blob, `${book.title}.pdf`);
+      this.showToast("PDF oluşturuldu.");
+    }).catch(err => {
+      console.error(err);
+      this.showToast("PDF oluşturulurken bir hata oluştu.");
+    });
   }
 
   /* -- Download Helper -- */
-  downloadBlob(blob, filename) {
+  async downloadBlob(blob, filename) {
+    if (window.showSaveFilePicker) {
+      try {
+        const extMatch = filename.match(/\.([^.]+)$/);
+        const ext = extMatch ? extMatch[1] : 'txt';
+        
+        let acceptOptions = {};
+        if (ext === 'txt') acceptOptions = { 'text/plain': ['.txt'] };
+        else if (ext === 'html') acceptOptions = { 'text/html': ['.html'] };
+        else if (ext === 'doc' || ext === 'docx') acceptOptions = { 'application/msword': ['.doc', '.docx'] };
+        else if (ext === 'pdf') acceptOptions = { 'application/pdf': ['.pdf'] };
+        
+        const opts = {
+          suggestedName: filename,
+          types: [{
+            description: ext.toUpperCase() + ' Dosyası',
+            accept: acceptOptions
+          }],
+        };
+        const handle = await window.showSaveFilePicker(opts);
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error(err);
+        } else {
+          return; // Kullanıcı işlemi iptal etti
+        }
+      }
+    }
+    // Fallback if showSaveFilePicker is not supported
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = filename;
@@ -1553,6 +1728,11 @@ class ImagefictionApp {
     }
 
     book.subject = document.getElementById('setting-book-subject').value.trim();
+    const authorVal = document.getElementById('setting-book-author').value.trim();
+    const publisherVal = document.getElementById('setting-book-publisher').value.trim();
+    if(authorVal) book.author = authorVal;
+    book.publisher = publisherVal;
+    
     const coverData = document.getElementById('setting-cover-data').value;
     if (coverData) book.cover = coverData;
 
@@ -1891,12 +2071,19 @@ class ImagefictionApp {
     }
 
     const activeFilter = filterSelect ? filterSelect.value : 'Tümü';
+    
+    const genderSelect = document.getElementById('templates-gender-filter-select');
+    const activeGenderFilter = genderSelect ? genderSelect.value : 'Tümü';
 
     let html = '';
     
     let filteredPersons = this.bookPersons;
     if (activeFilter !== 'Tümü') {
-      filteredPersons = this.bookPersons.filter(p => p.book_title === activeFilter);
+      filteredPersons = filteredPersons.filter(p => p.book_title === activeFilter);
+    }
+    
+    if (activeGenderFilter !== 'Tümü') {
+      filteredPersons = filteredPersons.filter(p => p.gender === activeGenderFilter);
     }
     
     filteredPersons.forEach(person => {
@@ -2349,35 +2536,24 @@ class ImagefictionApp {
     const rect = range.getBoundingClientRect();
 
     if (rect.width === 0 && rect.height === 0 && rect.left === 0 && rect.top === 0) {
-      // For empty elements or exact text node boundaries, getBoundingClientRect returns 0
-      // We use a temporary zero-width character span to find the exact coordinates
-      const span = document.createElement('span');
-      span.appendChild(document.createTextNode('\u200b')); // zero-width space
+      // Fallback for empty text nodes or empty paragraphs
+      let fallbackRect = null;
+      if (range.startContainer.nodeType === Node.ELEMENT_NODE) {
+          const el = range.startContainer.childNodes[range.startOffset] || range.startContainer;
+          if (el && el.getBoundingClientRect) {
+              fallbackRect = el.getBoundingClientRect();
+          }
+      } else if (range.startContainer.parentElement) {
+          fallbackRect = range.startContainer.parentElement.getBoundingClientRect();
+      }
       
-      // Preserve range state
-      const startContainer = range.startContainer;
-      const startOffset = range.startOffset;
-      
-      try {
-        range.insertNode(span);
-        const spanRect = span.getBoundingClientRect();
-        
-        caret.style.display = 'block';
-        caret.style.left = `${spanRect.left + window.scrollX}px`;
-        caret.style.top = `${spanRect.top + window.scrollY}px`;
-        caret.style.height = `${spanRect.height || 24}px`;
-        
-        // Clean up
-        span.remove();
-        
-        // Restore range
-        const newRange = document.createRange();
-        newRange.setStart(startContainer, startOffset);
-        newRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      } catch (err) {
-        caret.style.display = 'none';
+      if (fallbackRect) {
+          caret.style.display = 'block';
+          caret.style.left = `${fallbackRect.left + window.scrollX}px`;
+          caret.style.top = `${fallbackRect.top + window.scrollY}px`;
+          caret.style.height = `24px`;
+      } else {
+          caret.style.display = 'none';
       }
     } else {
       caret.style.display = 'block';

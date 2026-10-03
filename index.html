@@ -303,7 +303,7 @@
                             <span class="header-text">Üst Bilgi Ekle (Çift Tıkla)</span>
                           </div>
                           <div class="paper-sheet-content" id="rich-editor-content" contenteditable="true"
-                            data-page-index="0" oninput="app.onEditorInput()">
+                            data-page-index="0" oninput="app.onEditorInput()" onclick="app.handleEditorClick(event, this)">
                             <p>Gecenin karanlığı şehri kapladığında...</p>
                           </div>
                           <div class="paper-sheet-footer" ondblclick="app.editHeaderFooter(this, 'footer')"
@@ -396,6 +396,14 @@
                       <label style="font-weight: 600;">Konusu / Özet</label>
                       <textarea id="setting-book-subject" class="form-control" rows="4"></textarea>
                     </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                      <label style="font-weight: 600;">Yazar Adı</label>
+                      <input type="text" id="setting-book-author" class="form-control" placeholder="Örn: Yazar Adı">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                      <label style="font-weight: 600;">Yayınevi (Opsiyonel)</label>
+                      <input type="text" id="setting-book-publisher" class="form-control" placeholder="Örn: İMGE Yayınları">
+                    </div>
                     <div class="form-group" style="margin-bottom: 1.5rem;">
                       <label style="font-weight: 600;">Kapak Görseli Değiştir (Resim Dosyası Yükle)</label>
                       <div class="file-drop-zone" onclick="document.getElementById('setting-book-cover-file').click()">
@@ -426,10 +434,20 @@
           <!-- View: Karakterler Klasörü -->
           <div id="view-templates" class="view-page" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <label style="font-weight: 600; color: var(--text-secondary);">Filtre:</label>
-                <select id="templates-filter-select" class="form-control" style="min-width: 200px;" onchange="app.renderTemplatesGrid()">
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <label style="font-weight: 600; color: var(--text-secondary);">Kitap:</label>
+                <select id="templates-filter-select" class="form-control" style="min-width: 150px;" onchange="app.renderTemplatesGrid()">
                   <option value="Tümü">Tümü</option>
+                </select>
+                
+                <label style="font-weight: 600; color: var(--text-secondary); margin-left: 1rem;">Cinsiyet:</label>
+                <select id="templates-gender-filter-select" class="form-control" style="min-width: 120px;" onchange="app.renderTemplatesGrid()">
+                  <option value="Tümü">Tümü</option>
+                  <option value="Erkek">Erkek</option>
+                  <option value="Kadın">Kadın</option>
+                  <option value="Non-binary">Non-binary</option>
+                  <option value="Trans">Trans</option>
+                  <option value="Belirtilmemiş">Belirtilmemiş</option>
                 </select>
               </div>
               <button class="btn-primary" onclick="app.openCreatePersonModal(true)">+ Yeni Karakter Oluştur</button>
@@ -578,6 +596,7 @@
               <option value="Erkek">Erkek</option>
               <option value="Kadın">Kadın</option>
               <option value="Non-binary">Non-binary</option>
+              <option value="Trans">Trans</option>
               <option value="Belirtilmemiş">Belirtilmemiş</option>
             </select>
           </div>
@@ -728,6 +747,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="app.js"></script>
 </body>
 

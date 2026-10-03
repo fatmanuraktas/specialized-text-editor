@@ -2012,6 +2012,7 @@ body::before {
 
 .paper-sheet-content p {
   margin-bottom: 0;
+  min-height: 1.5em;
 }
 
 /* LanguageTool Spellchecker Styles */
